@@ -1,121 +1,171 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app/constants.dart';
-import 'package:flutter_app/screen/login.dart';
-import 'package:flutter_app/constants.dart';
 
-class SignUpPage extends StatefulWidget {
-  static route() => MaterialPageRoute(
-        builder: (context) => const SignUpPage(),
-      );
+import '../services/auth_services.dart';
+import 'login.dart';
 
-  const SignUpPage({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  _SignupScreenState createState() => _SignupScreenState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+class _SignupScreenState extends State<SignupScreen> {
+  final AuthService _authService =
+      AuthService(); // Instance of AuthService for authentication logic
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
+  // Controllers for capturing input from text fields
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
-  Future<void> createUserWithEmailAndPassword() async {
-    try {
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+  String _selectedRole = 'User'; // Default selected role for dropdown
+  bool _isLoading = false; // To show loading spinner during signup
+  bool isPasswordHidden = true;
+
+  // Signup function to handle user registration
+  void _signup() async {
+    setState(() {
+      _isLoading = true; // Show loading spinner
+    });
+
+    // Call signup method from AuthService with user inputs
+    String? result = await _authService.signup(
+      name: _nameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      role: _selectedRole,
+    );
+
+    setState(() {
+      _isLoading = false; // Hide loading spinner
+    });
+
+    if (result == null) {
+      // Signup successful: Navigate to LoginScreen with success message
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Signup Successful! Now Turn to Login'),
+      ));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
       );
-      Navigator.push(context, LoginPage.route());
-      print(userCredential.user?.uid);
-    } on FirebaseAuthException catch (e) {
-      print(e.message);
+    } else {
+      // Signup failed: Show error message
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Signup Failed: $result'),
+      ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Form(
-          key: formKey,
+        padding: const EdgeInsets.all(16.0), // Add padding to the screen
+        child: SingleChildScrollView(
+          // Makes the screen scrollable
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Sign Up.',
-                style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 10),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: emailController,
+              Image.asset("assets/6333204.jpg"), // Display an image at the top
+              // Input for name
+              TextField(
+                controller: _nameController,
                 decoration: const InputDecoration(
-                  hintText: 'Email',
+                  labelText: 'Name',
+                  border: OutlineInputBorder(),
                 ),
               ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: passwordController,
+              const SizedBox(height: 16),
+              // Input for email
+              TextField(
+                controller: _emailController,
                 decoration: const InputDecoration(
-                  hintText: 'Password',
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-                obscureText: true,
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await createUserWithEmailAndPassword();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(2.0),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                  ),
-                  child: const Text(
-                    'SIGN UP',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
+              const SizedBox(height: 16),
+              // Input for password
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isPasswordHidden = !isPasswordHidden;
+                      });
+                    },
+                    icon: Icon(
+                      isPasswordHidden
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                   ),
                 ),
+                obscureText: isPasswordHidden, // Hide the password
               ),
-              const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, LoginPage.route());
+              const SizedBox(height: 16),
+              // Dropdown for selecting role
+              DropdownButtonFormField<String>(
+                value: _selectedRole,
+                decoration: const InputDecoration(
+                  labelText: 'Role',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedRole = newValue!; // Update role selection
+                  });
                 },
-                child: RichText(
-                  text: TextSpan(
-                    text: 'Already have an account? ',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    children: [
-                      TextSpan(
-                        text: 'Sign In',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                items: ['seller', 'User'].map((role) {
+                  return DropdownMenuItem(
+                    value: role,
+                    child: Text(role),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 20),
+              // Signup button or loading spinner
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SizedBox(
+                      width: double.infinity, // Button stretches across width
+                      child: ElevatedButton(
+                        onPressed: _signup, // Call signup function
+                        child: const Text('Signup'),
                       ),
-                    ],
+                    ),
+              const SizedBox(height: 10),
+              // Navigation to LoginScreen
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text(
+                    "Already have an account? ",
+                    style: TextStyle(fontSize: 18),
                   ),
-                ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    },
+                    child: const Text(
+                      "Login here",
+                      style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                          letterSpacing: -1),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -1,121 +1,156 @@
-import 'package:firebase_auth/firebase_auth.dart';
+// This screen handles user login with email and password
 import 'package:flutter/material.dart';
 import 'package:flutter_app/screen/signup_page.dart';
-import 'package:flutter_app/showroom.dart';
+import 'package:flutter_app/seller/seller_home.dart';
+import 'package:flutter_app/user/showroom.dart';
 
-class LoginPage extends StatefulWidget {
-  static route() => MaterialPageRoute(
-        builder: (context) => const LoginPage(),
-      );
+import '../admin/home.dart';
+import '../services/auth_services.dart';
 
-  const LoginPage({super.key});
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final formKey = GlobalKey<FormState>();
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthService _authService = AuthService(); // Instance of AuthService
+// Controller for email input
+  final _emailController = TextEditingController();
 
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
+  // Controller for password input
+  final _passwordController = TextEditingController();
 
-  Future<void> loginUserWithEmailAndPassword() async {
-    try {
-      final userCredential =
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+  // To show spinner during login
+  bool _isLoading = false;
+
+  // Login function to handle user authentication
+  void _login() async {
+    setState(() {
+      _isLoading = true; // Show spinner
+    });
+
+    // Call login method from AuthService with user inputs
+    String? result = await _authService.login(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    setState(() {
+      _isLoading = false; // Hide spinner
+    });
+
+    // Navigate based on role or show error message
+    if (result == 'Admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const AdminHome(),
+        ),
       );
-      print(userCredential);
-      Navigator.of(context)
-          .push(MaterialPageRoute(builder: (context) => Showroom()));
-    } on FirebaseAuthException catch (e) {
-      print(e.message);
+    } else if (result == 'User') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const Showroom(),
+        ),
+      );
+    } else if (result == 'seller') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const SellerHome(),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Login Failed: $result'), // Show error message
+      ));
     }
   }
+
+  bool isPasswordHidden = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(15.0),
-        child: Form(
-          key: formKey,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0), // Add padding
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Sign In.',
-                style: TextStyle(
-                  fontSize: 50,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 30),
-              TextFormField(
-                controller: emailController,
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                ),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: passwordController,
-                decoration: const InputDecoration(
-                  hintText: 'Password',
-                ),
-                obscureText: true,
-              ),
+              Image.asset("assets/3094352.jpg"), // Display login screen image
               const SizedBox(height: 20),
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    await loginUserWithEmailAndPassword();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(2.0),
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                  ),
-                  child: const Text(
-                    'SIGN IN',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.black,
+              // Input for email
+              TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Input for password
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      setState(() {
+                        isPasswordHidden = !isPasswordHidden;
+                      });
+                    },
+                    icon: Icon(
+                      isPasswordHidden
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                   ),
                 ),
+                obscureText: true, // Hide password
               ),
               const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, SignUpPage.route());
-                },
-                child: RichText(
-                  text: TextSpan(
-                    text: 'Don\'t have an account? ',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    children: [
-                      TextSpan(
-                        text: 'Sign Up',
-                        style:
-                            Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
+              // Login button or spinner
+              _isLoading
+                  ? const CircularProgressIndicator()
+                  : SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _login, // Call login function
+                        child: const Text('Login'),
                       ),
-                    ],
+                    ),
+
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  const Text(
+                    "Don't have an account? ",
+                    style: TextStyle(fontSize: 18),
                   ),
-                ),
+                  InkWell(
+                    onTap: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignupScreen()),
+                      );
+                    },
+                    child: const Text(
+                      "Signup here",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

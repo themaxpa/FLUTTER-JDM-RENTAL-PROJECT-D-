@@ -2,13 +2,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/constants.dart';
-import 'package:flutter_app/data.dart';
+import 'package:flutter_app/seller/data.dart';
 import 'package:flutter_app/screen/fullscreen.dart';
+import 'package:flutter_app/user/user_profile.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_app/car_widget.dart';
-import 'package:flutter_app/dealer_widget.dart';
+import 'package:flutter_app/user/dealer_widget.dart';
 import 'package:flutter_app/available_cars.dart';
-import 'package:flutter_app/book_car.dart';
+import 'package:flutter_app/user/book_car.dart';
 
 class Showroom extends StatefulWidget {
   const Showroom({super.key});
@@ -121,12 +122,18 @@ class _ShowroomState extends State<Showroom> {
                           ),
                           Row(
                             children: [
-                              Text(
-                                "view all",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: kPrimaryColor,
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(MaterialPageRoute(
+                                      builder: (context) => ProfileScreen()));
+                                },
+                                child: Text(
+                                  "view all",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: kPrimaryColor,
+                                  ),
                                 ),
                               ),
                               SizedBox(

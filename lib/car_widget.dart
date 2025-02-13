@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/data.dart';
+import 'package:flutter_app/seller/data.dart';
 import 'package:flutter_app/constants.dart';
 
 Widget buildCar(Car car, int index) {

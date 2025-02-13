@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/constants.dart';
-import 'package:flutter_app/data.dart';
+import 'package:flutter_app/seller/data.dart';
 
 class BookCar extends StatefulWidget {
   final Car car;

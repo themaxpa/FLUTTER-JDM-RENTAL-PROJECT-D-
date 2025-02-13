@@ -105,7 +105,7 @@ class PageViewerScreen extends StatelessWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (ctx) {
-                            return LoginPage();
+                            return LoginScreen();
                           },
                         ),
                       );
