@@ -122,7 +122,7 @@ class _ShowroomState extends State<Showroom> {
                           ),
                           Row(
                             children: [
-                              ElevatedButton(
+                              TextButton(
                                 onPressed: () {
                                   Navigator.of(context).push(MaterialPageRoute(
                                       builder: (context) => ProfileScreen()));
@@ -166,7 +166,6 @@ class _ShowroomState extends State<Showroom> {
                         //         AvailableCars()
                         //   ),
                         // );
-                        _signOut();
                       },
                       child: Padding(
                         padding: EdgeInsets.only(top: 16, right: 16, left: 16),
@@ -357,18 +356,5 @@ class _ShowroomState extends State<Showroom> {
         ),
       ),
     );
-  }
-
-  Future<void> _signOut() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.of(context).push(
-          MaterialPageRoute(builder: (context) => FullScreenBackground()));
-      // Optionally navigate to the login screen or show a success message.
-      print("User signed out!");
-    } catch (e) {
-      print("Error signing out: $e");
-      // Handle potential errors.
-    }
   }
 }

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/screen/signup_page.dart';
-
 import 'carousel.dart';
 import 'login.dart';
 
