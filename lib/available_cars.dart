@@ -16,9 +16,7 @@ class _AvailableCarsState extends State<AvailableCars> {
   @override
   void initState() {
     super.initState();
-    setState(() {
-      selectedFilter = filters[0];
-    });
+    selectedFilter = filters[0];
   }
 
   @override
@@ -37,8 +35,8 @@ class _AvailableCarsState extends State<AvailableCars> {
                   Navigator.pop(context);
                 },
                 child: Container(
-                    width: 45,
-                    height: 45,
+                    width: 60,
+                    height: 55,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.all(
@@ -72,10 +70,10 @@ class _AvailableCarsState extends State<AvailableCars> {
               Expanded(
                 child: GridView.count(
                   physics: BouncingScrollPhysics(),
-                  childAspectRatio: 1 / 1.55,
+                  childAspectRatio: 1,
                   crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                   children: getCarList().map((item) {
                     return GestureDetector(
                       onTap: () {
@@ -85,7 +83,7 @@ class _AvailableCarsState extends State<AvailableCars> {
                               builder: (context) => BookCar(car: item)),
                         );
                       },
-                      // child: buildCar(item, null),
+                      child: buildCar(item, 0), //Corrected code
                     );
                   }).toList(),
                 ),
@@ -102,8 +100,14 @@ class _AvailableCarsState extends State<AvailableCars> {
         child: Row(
           children: [
             buildFilterIcon(),
-            Row(
-              children: buildFilters(),
+            Expanded(
+              child: SingleChildScrollView(
+                // Changed ListView to SingleChildScrollView
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: buildFilters(),
+                ),
+              ),
             ),
           ],
         ),

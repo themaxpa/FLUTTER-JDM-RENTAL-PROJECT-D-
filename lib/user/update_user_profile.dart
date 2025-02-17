@@ -48,26 +48,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       // Set text controllers with current user's information
       nameController.text = user.displayName ?? '';
       emailController.text = user.email ?? '';
-      //  phoneController.text = user.phoneNumber ?? ''; // Firebase Auth doesn't directly store phone number
-      // You may have to retrieve the phone number from Firestore
-      // using the user's UID if you have previously stored it there
-      // Example:
-      //   FirebaseFirestore.instance
-      //     .collection('users')
-      //     .doc(user.uid)
-      //     .get()
-      //     .then((DocumentSnapshot documentSnapshot) {
-      //       if (documentSnapshot.exists) {
-      //         phoneController.text = (documentSnapshot.data() as Map<String, dynamic>)['phone'] ?? '';
-      //       }
-      //     });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
         leading: IconButton(
           onPressed: () => Get.back(),
           icon: const Icon(LineAwesomeIcons.angle_left_solid),
@@ -270,6 +259,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(2.0),
                           ),
+                          backgroundColor: Colors.blueGrey,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 15),
                         ),
