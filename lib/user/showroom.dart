@@ -1,10 +1,10 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_app/constants.dart';
-import 'package:flutter_app/seller/data.dart';
-import 'package:flutter_app/screen/fullscreen.dart';
 import 'package:flutter_app/user/user_profile.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_app/car_widget.dart';
 import 'package:flutter_app/user/dealer_widget.dart';
@@ -14,9 +14,10 @@ import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
 import '../screen/notification.dart';
 import '../screen/screen_main.dart';
+import '../seller/data.dart';
 
 class Showroom extends StatefulWidget {
-  const Showroom({Key? key}) : super(key: key);
+  const Showroom({super.key});
 
   @override
   _ShowroomState createState() => _ShowroomState();
@@ -182,7 +183,38 @@ class _ShowroomState extends State<Showroom> {
                         Row(
                           children: [
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () async {
+                                // Show confirmation dialog
+                                Get.dialog(
+                                  AlertDialog(
+                                    title: const Text("Confirm Logout"),
+                                    content: const Text(
+                                        "Are you sure you want to logout?"),
+                                    actions: [
+                                      TextButton(
+                                        child: const Text("Cancel"),
+                                        onPressed: () {
+                                          Get.back(); // Close the dialog
+                                        },
+                                      ),
+                                      TextButton(
+                                        child: const Text("Logout"),
+                                        onPressed: () async {
+                                          Get.back(); // Close the dialog
+                                          try {
+                                            // await FirebaseAuth.instance.signOut();
+                                            // Get.offAll(() => SplashScreen());
+                                          } catch (e) {
+                                            print("Error signing out: $e");
+                                            Get.snackbar("Logout Failed",
+                                                "An error occurred during logout.");
+                                          }
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
                               child: Text(
                                 "view all",
                                 style: TextStyle(

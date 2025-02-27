@@ -45,6 +45,7 @@ dependencies:
   webview_flutter: ^4.10.0
   persistent_bottom_nav_bar: ^6.2.1
   page_transition: ^2.2.1
+  shared_preferences: ^2.5.2
 
 
 dev_dependencies:
@@ -74,7 +75,6 @@ flutter:
   assets:
     - assets/images/
     - assets/images/ph12.jpg
-    - assets/images/loginBG.png
     - assets/images/ph2.jpg
 
 

@@ -4,17 +4,14 @@ import 'package:flutter_app/user/profile_details.dart';
 import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// Import Firebase Core if you haven't already
-import 'package:firebase_core/firebase_core.dart';
-import 'user_profile_widget_menu.dart';
+import 'package:firebase_core/firebase_core.dart'; // Ensure this import is present
 
 // Define tPrimaryColor and tBlackColor (or import from your constants file)
 const tPrimaryColor = Colors.blue; // Replace with your actual primary color
 const tBlackColor = Colors.black; // Replace with your actual black color
 
 class UpdateProfileScreen extends StatefulWidget {
-  const UpdateProfileScreen({Key? key}) : super(key: key);
+  const UpdateProfileScreen({super.key});
 
   @override
   _UpdateProfileScreenState createState() => _UpdateProfileScreenState();
@@ -38,7 +35,11 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     // Initialize Firebase (if not already done)
     WidgetsFlutterBinding.ensureInitialized();
-    Firebase.initializeApp();
+
+    // Initialize Firebase (if not already initialized)
+    if (Firebase.apps.isEmpty) {
+      Firebase.initializeApp();
+    }
 
     // Get current user from Firebase Authentication
     final user = auth.currentUser;
@@ -48,7 +49,52 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       // Set text controllers with current user's information
       nameController.text = user.displayName ?? '';
       emailController.text = user.email ?? '';
+
+      // Fetch additional user data from Firestore
+      fetchUserData(user.uid);
     }
+  }
+
+  Future<void> fetchUserData(String uid) async {
+    try {
+      final userData = await DatabaseMethods().getUserDetails(uid);
+      if (userData.exists) {
+        // Set text controllers with data from Firestore
+        final data = userData.data() as Map<String, dynamic>?;
+        if (data != null) {
+          nameController.text = data['name'] ?? '';
+          emailController.text = data['email'] ?? '';
+          phoneController.text = data['phone'] ?? ''; // Use null-aware operator
+          locationController.text =
+              data['location'] ?? ''; // Use null-aware operator
+        }
+      } else {
+        print("No user data found in Firestore for UID: $uid");
+      }
+    } catch (e) {
+      print("Error fetching user data from Firestore: $e");
+    }
+  }
+
+  // Function to show an AlertDialog
+  void _showAlertDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(message),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop(); // Dismiss the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -79,7 +125,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       borderRadius: BorderRadius.circular(100),
                       child: const Image(
                         image: AssetImage('assets/images/ph12.jpg'),
-                        // Ensure this image exists
                         fit: BoxFit.cover, // Ensure the image fits properly
                       ),
                     ),
@@ -88,7 +133,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                     bottom: 0,
                     right: 0,
                     child: InkWell(
-                      // Make the icon tappable
                       onTap: () {
                         // Implement image selection logic here
                         print("Change profile picture tapped");
@@ -111,7 +155,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
               // -- Form Fields
               Form(
-                key: _formKey, // Assign the form key
+                key: _formKey,
                 child: Column(
                   children: [
                     TextFormField(
@@ -121,14 +165,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         prefixIcon: Icon(LineAwesomeIcons.user),
                       ),
                       validator: (value) {
-                        // Add basic validation
                         if (value == null || value.isEmpty) {
                           return 'Please enter your full name';
                         }
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20), // Increased spacing
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: emailController,
                       decoration: const InputDecoration(
@@ -136,7 +179,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         prefixIcon: Icon(LineAwesomeIcons.envelope),
                       ),
                       keyboardType: TextInputType.emailAddress,
-                      // Hint to keyboard
                       validator: (value) {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
@@ -154,7 +196,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         labelText: 'Phone Number',
                         prefixIcon: Icon(LineAwesomeIcons.phone_alt_solid),
                       ),
-                      keyboardType: TextInputType.phone, // Hint to keyboard
+                      keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 20),
                     TextFormField(
@@ -193,65 +235,49 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       child: ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            // Validate the form
-                            // Form is valid, process data
-                            print("Form is valid, processing data...");
-
-                            // Get the current user from Firebase Auth
                             final auth = FirebaseAuth.instance;
                             final user = auth.currentUser;
 
                             if (user != null) {
-                              // Create a map of the user info to update
-                              Map<String, dynamic> userInfoMap = {
-                                "name": nameController.text,
-                                "email": emailController.text,
-                                "phone": phoneController.text,
-                                "location": locationController.text,
-                                // Access the text value
-                                // DO NOT include "role" in the map being sent to Firestore
-                                // Let admins or secure backend functions handle role management.
-                              };
+                              // Build the user info map, only adding fields that are non-empty
+                              Map<String, dynamic> userInfoMap = {};
+
+                              userInfoMap["name"] = nameController.text;
+                              userInfoMap["email"] = emailController.text;
+
+                              // Add phone and location only if they are not empty
+                              if (phoneController.text.isNotEmpty) {
+                                userInfoMap["phone"] = phoneController.text;
+                              }
+                              if (locationController.text.isNotEmpty) {
+                                userInfoMap["location"] =
+                                    locationController.text;
+                              }
                               try {
-                                // Call the DatabaseMethods function to update user details
                                 await DatabaseMethods()
                                     .addUserDetails(userInfoMap, user.uid);
 
-                                // Optionally, update the user's profile in Firebase Auth
                                 await user
                                     .updateDisplayName(nameController.text);
-                                await user.updateEmail(emailController.text);
-                                // Update the password using Firebase Auth, NOT Firestore
+                                await user.verifyBeforeUpdateEmail(
+                                    emailController.text);
+
                                 if (passwordController.text.isNotEmpty) {
                                   await user
                                       .updatePassword(passwordController.text);
                                 }
 
-                                // Show a success message
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text('Profile updated successfully!'),
-                                  ),
-                                );
+                                _showAlertDialog('Success',
+                                    'Profile updated successfully!'); // Show success alert
                               } catch (error) {
-                                // Handle errors
                                 print("Error updating profile: $error");
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content:
-                                        Text('Error updating profile: $error'),
-                                  ),
-                                );
+                                _showAlertDialog('Error',
+                                    'Error updating profile: $error'); // Show error alert
                               }
                             } else {
-                              // Handle the case where the user is not logged in.
                               print("User is not logged in.");
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('User is not logged in.'),
-                                ),
-                              );
+                              _showAlertDialog('Error',
+                                  'User is not logged in.'); // Show "not logged in" alert
                             }
                           }
                         },
@@ -286,7 +312,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                             children: [
                               TextSpan(
                                 text: 'Some Date Here',
-                                // Replace with actual date
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 12),
                               )
@@ -295,8 +320,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            // Implement delete account logic here
-                            print("Delete account tapped");
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -305,7 +328,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                             );
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent.withOpacity(0.1),
+                            backgroundColor: Colors.redAccent.withValues(),
                             elevation: 0,
                             foregroundColor: Colors.blue,
                             shape: const StadiumBorder(),

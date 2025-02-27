@@ -14,7 +14,7 @@ class FullScreenBackground extends StatelessWidget {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/ph13.jpg'),
+                image: AssetImage('assets/images/spb.png'),
                 fit: BoxFit.cover,
               ),
             ),
