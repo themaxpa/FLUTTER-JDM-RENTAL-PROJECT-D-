@@ -1,7 +1,8 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_app/user/update_user_profile.dart'; // Import the UpdateProfileScreen
+import 'package:flutter_app/user/update_user_profile.dart';
 
 class ProfileDetailsScreen extends StatefulWidget {
   const ProfileDetailsScreen({Key? key}) : super(key: key);
@@ -26,78 +27,96 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
   Future<void> _loadUserData() async {
     setState(() {
-      _isLoading = true; // Show loading indicator
+      _isLoading = true;
     });
 
-    _user = _auth.currentUser; // Get the current user
+    _user = _auth.currentUser;
 
     if (_user != null) {
       try {
         _userData = await _firestore.collection('users').doc(_user!.uid).get();
-
-        setState(() {
-          _isLoading = false; // Hide loading indicator
-        });
       } catch (error) {
         print("Error fetching user data: $error");
-        // Handle error (e.g., show an error message)
-        setState(() {
-          _isLoading = false; // Hide loading indicator
-        });
       }
-    } else {
-      print("No user logged in.");
-      setState(() {
-        _isLoading = false; // Hide loading indicator
-      });
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Center(
-            child: const Text(
-          'User Profile Details',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-        )),
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text(
+          'Profile Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // Loading Indicator
-          : _user == null
-              ? const Center(
-                  child: Text('No user logged in.'),
-                ) // No User Message
-              : _userData == null || !_userData!.exists
-                  ? const Center(
-                      child: Text('User data not found.'),
-                    ) // Data Not Found Message
-                  : Center(
-                      child: Padding(
+      child: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child:
+                    CupertinoActivityIndicator(radius: 16)) // iOS-style loader
+            : _user == null
+                ? const Center(
+                    child: Text(
+                      'No user logged in.',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                  )
+                : _userData == null || !_userData!.exists
+                    ? const Center(
+                        child: Text(
+                          'User data not found.',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w500),
+                        ),
+                      )
+                    : Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text('Name: ${_userData!['name'] ?? 'N/A'}'),
-                            const SizedBox(height: 8),
-                            Text('Email: ${_userData!['email'] ?? 'N/A'}'),
-                            const SizedBox(height: 8),
-                            Text('Phone: ${_userData!['phone'] ?? 'N/A'}'),
-                            const SizedBox(height: 8),
-                            Text(
-                                'Location: ${_userData!['location'] ?? 'N/A'}'),
-                            const SizedBox(height: 8),
-                            Text(
-                                'Role: ${_userData!['role'] ?? 'N/A'}'), // Display the role
-                            const SizedBox(height: 8),
-                            // Add more details as needed
+                            // Profile Image
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(50),
+                              child: Image.asset(
+                                'assets/images/ph12.jpg',
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
 
-                            ElevatedButton(
+                            // User Details
+                            Material(
+                                child:
+                                    _buildInfoRow('Name', _userData!['name'])),
+                            Material(
+                                child: _buildInfoRow(
+                                    'Email', _userData!['email'])),
+                            Material(
+                                child: _buildInfoRow(
+                                    'Phone', _userData!['phone'])),
+                            Material(
+                                child: _buildInfoRow(
+                                    'Location', _userData!['location'])),
+                            Material(
+                                child:
+                                    _buildInfoRow('Role', _userData!['role'])),
+
+                            const SizedBox(height: 30),
+
+                            // Edit Profile Button
+                            CupertinoButton.filled(
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(
+                                  CupertinoPageRoute(
                                       builder: (context) =>
                                           const UpdateProfileScreen()),
                                 );
@@ -107,7 +126,46 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                           ],
                         ),
                       ),
-                    ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String? value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemGrey5,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Material(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  backgroundColor: CupertinoColors.systemGrey5,
+                ),
+              ),
+            ),
+            Material(
+              child: Text(
+                value ?? 'N/A',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: CupertinoColors.systemGrey,
+                  backgroundColor: CupertinoColors.systemGrey5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
