@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../services/auth_services.dart';
 import 'login.dart';
 
@@ -12,13 +12,10 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final AuthService _authService = AuthService();
-
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
-  String _selectedRole =
-      'user'; // Corrected default role to 'user' to match dropdown values
+  String _selectedRole = 'user';
   bool _isLoading = false;
   bool isPasswordHidden = true;
 
@@ -44,35 +41,62 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
-        // Check if the widget is still in the tree before setState
         setState(() {
           _isLoading = false;
         });
 
         if (result == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Signup Successful! Now turn to Login')),
-          );
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: Text('Success'),
+              content: Text('Signup Successful! Now turn to Login'),
+              actions: [
+                CupertinoDialogAction(
+                  child: Text('OK'),
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      CupertinoPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Signup Failed: $result')),
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: Text('Error'),
+              content: Text('Signup Failed: $result'),
+              actions: [
+                CupertinoDialogAction(
+                  child: Text('OK'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
           );
         }
       }
     } catch (e) {
       if (mounted) {
-        // Check if the widget is still in the tree before setState
         setState(() {
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('An unexpected error occurred: ${e.toString()}')),
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: Text('Error'),
+            content: Text('An unexpected error occurred: ${e.toString()}'),
+            actions: [
+              CupertinoDialogAction(
+                child: Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
         );
       }
     }
@@ -80,122 +104,98 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        // Wrap the entire body with SafeArea
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        middle: Text('Signup'),
+      ),
+      child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.asset("assets/images/tesla.jpg"),
-                const SizedBox(height: 40),
-                TextField(
+                Center(child: Image.asset("assets/images/tesla.jpg")),
+                SizedBox(height: 40),
+                CupertinoTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                    border: OutlineInputBorder(),
+                  placeholder: 'Name',
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: CupertinoColors.systemGrey),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
+                SizedBox(height: 16),
+                CupertinoTextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
+                  placeholder: 'Email',
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: CupertinoColors.systemGrey),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextField(
+                SizedBox(height: 16),
+                CupertinoTextField(
                   controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isPasswordHidden = !isPasswordHidden;
-                        });
-                      },
-                      icon: Icon(
-                        isPasswordHidden
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                      ),
-                    ),
-                  ),
+                  placeholder: 'Password',
                   obscureText: isPasswordHidden,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedRole,
-                  decoration: const InputDecoration(
-                    labelText: 'Role',
-                    border: OutlineInputBorder(),
+                  padding: EdgeInsets.all(16),
+                  suffix: CupertinoButton(
+                    child: Icon(
+                      isPasswordHidden
+                          ? CupertinoIcons.eye_slash
+                          : CupertinoIcons.eye,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        isPasswordHidden = !isPasswordHidden;
+                      });
+                    },
                   ),
-                  onChanged: (String? newValue) {
+                  decoration: BoxDecoration(
+                    border: Border.all(color: CupertinoColors.systemGrey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                SizedBox(height: 16),
+                CupertinoPicker(
+                  itemExtent: 32.0,
+                  onSelectedItemChanged: (int index) {
                     setState(() {
-                      _selectedRole = newValue!;
+                      _selectedRole = ['seller', 'user'][index];
                     });
                   },
-                  items: ['seller', 'user'].map((role) {
-                    return DropdownMenuItem(
-                      value: role,
-                      child: Text(role),
-                    );
-                  }).toList(),
+                  children:
+                      ['seller', 'user'].map((role) => Text(role)).toList(),
                 ),
-                const SizedBox(height: 20),
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _signup,
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(2.0),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 15),
-                          ),
-                          child: const Text(
-                            'Signup',
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                const SizedBox(height: 10),
+                SizedBox(height: 16),
+                CupertinoButton.filled(
+                  onPressed: _signup,
+                  child: _isLoading
+                      ? CupertinoActivityIndicator()
+                      : Text('Signup'),
+                ),
+                SizedBox(height: 10),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      "Already have an account? ",
-                      style: TextStyle(fontSize: 18),
-                    ),
-                    InkWell(
-                      onTap: () {
+                    Material(
+                        child: Text("Already have an account? ",
+                            style: TextStyle(fontSize: 10))),
+                    CupertinoButton(
+                      child: Material(
+                          child: Text("Login here",
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold))),
+                      onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
+                          CupertinoPageRoute(
                               builder: (_) => const LoginScreen()),
                         );
                       },
-                      child: const Text(
-                        "Login here",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                          letterSpacing: -1,
-                        ),
-                      ),
                     ),
                   ],
                 ),
