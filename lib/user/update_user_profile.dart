@@ -267,17 +267,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                                       .updatePassword(passwordController.text);
                                 }
 
-                                _showAlertDialog('Success',
-                                    'Profile updated successfully!'); // Show success alert
+                                Get.snackbar(
+                                    'Success', 'Profile updated successfully!');
                               } catch (error) {
                                 print("Error updating profile: $error");
-                                _showAlertDialog('Error',
-                                    'Error updating profile: $error'); // Show error alert
+                                Get.snackbar(
+                                    'Error', 'Error updating profile: $error');
                               }
                             } else {
                               print("User is not logged in.");
-                              _showAlertDialog('Error',
-                                  'User is not logged in.'); // Show "not logged in" alert
+                              Get.snackbar('Error', 'User is not logged in.');
                             }
                           }
                         },

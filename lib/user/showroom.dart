@@ -183,37 +183,9 @@ class _ShowroomState extends State<Showroom> {
                         Row(
                           children: [
                             TextButton(
-                              onPressed: () async {
-                                // Show confirmation dialog
-                                Get.dialog(
-                                  AlertDialog(
-                                    title: const Text("Confirm Logout"),
-                                    content: const Text(
-                                        "Are you sure you want to logout?"),
-                                    actions: [
-                                      TextButton(
-                                        child: const Text("Cancel"),
-                                        onPressed: () {
-                                          Get.back(); // Close the dialog
-                                        },
-                                      ),
-                                      TextButton(
-                                        child: const Text("Logout"),
-                                        onPressed: () async {
-                                          Get.back(); // Close the dialog
-                                          try {
-                                            // await FirebaseAuth.instance.signOut();
-                                            // Get.offAll(() => SplashScreen());
-                                          } catch (e) {
-                                            print("Error signing out: $e");
-                                            Get.snackbar("Logout Failed",
-                                                "An error occurred during logout.");
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                );
+                              onPressed: () {
+                                Get.snackbar("Coming Soon",
+                                    "Settings feature is under development.");
                               },
                               child: Text(
                                 "view all",
