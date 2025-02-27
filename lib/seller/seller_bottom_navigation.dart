@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/seller/add_cars.dart';
-
-import 'package:flutter_app/seller/seller_home.dart';
-import 'package:flutter_app/seller/seller_profile.dart';
+import 'package:flutter/cupertino.dart'; // iOS Icons
 
 class SellerBottomNavigation extends StatelessWidget {
   final int selectedIndex;
@@ -17,44 +14,29 @@ class SellerBottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      backgroundColor: Colors.white,
+      type: BottomNavigationBarType.fixed,
+      // Keeps labels visible
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.home),
+          icon: Icon(CupertinoIcons.house), // iOS-style icon
           label: 'Home',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.business),
-          label: 'Orders',
+          icon: Icon(CupertinoIcons.car), // iOS-style icon
+          label: 'Cars',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person),
+          icon: Icon(CupertinoIcons.person), // iOS-style icon
           label: 'Profile',
         ),
       ],
       currentIndex: selectedIndex,
-      selectedItemColor: Colors.amber[800],
-      onTap: (index) {
-        // Call the passed-in function with the selected index
-        onItemTapped(index);
-
-        // Perform navigation based on the index
-        switch (index) {
-          case 0: // Home
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const SellerHome()));
-            break;
-          case 1: // Orders
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const AddCars()));
-            break;
-          case 2: // Profile
-            Navigator.of(context).pushReplacement(MaterialPageRoute(
-                builder: (context) => const SellerProfileScreen()));
-            break;
-          default:
-            break;
-        }
-      },
+      selectedItemColor: Color(0xFF20232B),
+      // iOS-style color
+      unselectedItemColor: Colors.grey,
+      // iOS-style inactive color
+      onTap: onItemTapped,
     );
   }
 }

@@ -49,6 +49,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        backgroundColor: Colors.white,
         middle: const Text(
           'Profile Details',
           style: TextStyle(fontWeight: FontWeight.bold),

@@ -6,7 +6,10 @@ class AddCars extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: Text('ADD')),
+      backgroundColor: Colors.white,
+      body: Center(
+          child: Text('Cars',
+              style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold))),
     );
   }
 }
