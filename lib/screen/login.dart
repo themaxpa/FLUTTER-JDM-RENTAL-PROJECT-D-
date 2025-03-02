@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/screen/signup_page.dart';
 import 'package:flutter_app/seller/seller_home.dart';
 import 'package:flutter_app/user/showroom.dart';
+import 'package:get/get.dart'; // Import GetX package
 import '../admin/home.dart';
 import '../services/auth_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
+import 'forgot_password.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -31,6 +33,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      _showSnackBar("Error", "Email and password cannot be empty.");
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       String? role = await _authService.login(
@@ -45,13 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
         await _cacheUserRole(role, uid);
         _navigateToHomeScreen(role);
       } else {
-        _showSnackBar('Login Failed: Could not determine user role.');
+        _showSnackBar('Error', 'Invalid email or password. Please try again.');
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
+      if (e.code == 'user-not-found') {
+        _showSnackBar('Error', 'No user found with this email.');
+      } else if (e.code == 'wrong-password') {
+        _showSnackBar('Error', 'Incorrect password. Please try again.');
+      } else if (e.code == 'invalid-email') {
+        _showSnackBar('Error', 'Invalid email format.');
+      } else {
+        _showSnackBar('Error', 'Login failed: ${e.message}');
       }
     } catch (error) {
-      _showSnackBar('An error occurred during login.');
-      print("Login Error: $error");
-    } finally {
       setState(() => _isLoading = false);
+      _showSnackBar('Error', 'An unexpected error occurred. Please try again.');
     }
   }
 
@@ -74,12 +91,20 @@ class _LoginScreenState extends State<LoginScreen> {
         homeScreen = const Showroom();
         break;
       default:
-        homeScreen = Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(
-            child: Text(
-              'Unknown Role: $role',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        homeScreen = CupertinoPageScaffold(
+          navigationBar: const CupertinoNavigationBar(
+            middle: Center(child: Material(child: Text("Unknown Role"))),
+            backgroundColor: CupertinoColors.systemGrey6,
+          ),
+          child: Center(
+            child: Center(
+              child: Material(
+                child: Text(
+                  'Unknown Role: $role',
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           ),
         );
@@ -90,29 +115,45 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+  /// **Custom Snackbar with iOS Design**
+  void _showSnackBar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.TOP,
+      backgroundColor: Colors.black,
+      // Set background color to black
+      duration: const Duration(seconds: 3),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 12,
+      isDismissible: true,
+      overlayBlur: 2,
+      // Slight blur effect
+      colorText: Colors.white,
+      // White text for visibility
+      titleText: Text(
+        title,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+          color: Colors.white, // White title text
+        ),
+      ),
+      messageText: Text(
+        message,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold, // Bold message text
+          fontSize: 14,
+          color: Colors.white, // White message text
+        ),
+      ),
     );
-  }
-
-  Future<void> _resetPassword() async {
-    if (_emailController.text.isEmpty) {
-      _showSnackBar("Please enter your email to reset password");
-      return;
-    }
-    try {
-      await FirebaseAuth.instance
-          .sendPasswordResetEmail(email: _emailController.text.trim());
-      _showSnackBar("Password reset link sent to your email");
-    } catch (e) {
-      _showSnackBar("Failed to send reset email: $e");
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: Colors.grey[200],
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -157,12 +198,21 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
-                  onTap: _resetPassword,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordPage()),
+                  ),
                   child: Material(
-                    child: const Text(
+                    color: Colors.grey[200],
+                    child: Text(
                       "Forgot Password?",
                       style: TextStyle(
-                          color: CupertinoColors.activeBlue, fontSize: 16),
+                        fontWeight: FontWeight.bold,
+                        color: CupertinoColors.activeBlue,
+                        backgroundColor: Colors.grey[200],
+                        fontSize: 13,
+                      ),
                     ),
                   ),
                 ),
@@ -170,23 +220,21 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
               _isLoading
                   ? const Center(child: CupertinoActivityIndicator())
-                  : CupertinoButton.filled(
-                      onPressed: _login,
+                  : CupertinoButton(
+                      color: Colors.black,
                       borderRadius: BorderRadius.circular(12),
-                      child: const Text("Login"),
+                      onPressed: _login,
+                      child: const Text("Login",
+                          style: TextStyle(color: Colors.white)),
                     ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Material(
-                    child: const Text(
-                      "Don't have an account? ",
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey),
-                    ),
+                    color: Colors.grey[200],
+                    child: const Text("Don't have an account? ",
+                        style: TextStyle(fontSize: 12)),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pushReplacement(
@@ -194,12 +242,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       CupertinoPageRoute(builder: (_) => const SignupScreen()),
                     ),
                     child: Material(
-                      child: const Text(
+                      color: Colors.grey[200],
+                      child: Text(
                         "Signup here",
                         style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: CupertinoColors.activeBlue),
+                            fontSize: 13,
+                            color: CupertinoColors.activeBlue,
+                            backgroundColor: Colors.grey[200],
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

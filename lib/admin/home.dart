@@ -1,11 +1,72 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/admin/profile.dart';
+import 'package:flutter_app/admin/users.dart';
 import 'package:get/get.dart';
+import 'dart:ui';
 
-import '../screen/screen_splash.dart';
 import '../main.dart'; // Import AuthController
 
-class AdminHome extends StatelessWidget {
+class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
+
+  @override
+  State<AdminHome> createState() => _AdminHomeState();
+}
+
+class _AdminHomeState extends State<AdminHome> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  User? _user;
+
+  DocumentSnapshot? _userData;
+
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    _user = _auth.currentUser;
+
+    if (_user != null) {
+      try {
+        DocumentSnapshot snapshot =
+            await _firestore.collection('users').doc(_user!.uid).get();
+
+        if (snapshot.exists && snapshot.data() != null) {
+          setState(() {
+            _userData = snapshot;
+            _isLoading = false;
+          });
+        } else {
+          _userData = null;
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } catch (error) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } else {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,16 +75,25 @@ class AdminHome extends StatelessWidget {
       authController = Get.find<AuthController>();
     } catch (e) {
       print("AuthController not found: $e");
-      return const Scaffold(
-          body: Center(child: Text("Error: AuthController missing")));
+      return Scaffold(
+          backgroundColor: Colors.grey[200],
+          body: const Center(child: Text("Error: AuthController missing")));
     }
 
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        backgroundColor: Colors.grey[200],
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       drawer: _buildNavigationDrawer(authController), // Add Drawer
-      body: const Center(
+      body: Center(
         child: Text(
           "Welcome Admin!",
           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -47,11 +117,16 @@ class AdminHome extends StatelessWidget {
                 "Coming Soon", "Settings feature is under development.");
           }),
           _buildDrawerItem(Icons.calendar_month, "Date", () {
-            Get.snackbar("Coming Soon", "Date feature is under development.");
+            Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (_) => UsersTableScreen()),
+            );
           }),
           _buildDrawerItem(Icons.person, "Profile", () {
-            Get.snackbar(
-                "Coming Soon", "Profile feature is under development.");
+            Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (_) => const AdminProfileScreen()),
+            );
           }),
           const Divider(), // Adds a visual separator
           _buildDrawerItem(Icons.logout, "Logout", () {
@@ -64,21 +139,21 @@ class AdminHome extends StatelessWidget {
 
   // Drawer Header
   Widget _buildDrawerHeader() {
-    return const DrawerHeader(
-      decoration: BoxDecoration(color: Colors.blue),
+    return DrawerHeader(
+      decoration: const BoxDecoration(color: Colors.black),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.admin_panel_settings, size: 50, color: Colors.white),
-          SizedBox(height: 10),
+          const Icon(Icons.admin_panel_settings, size: 50, color: Colors.white),
+          const SizedBox(height: 10),
           Text(
-            "Admin Panel",
-            style: TextStyle(
-                color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            _userData != null ? (_userData!['name'] ?? 'N/A') : 'N/A',
+            style: const TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           Text(
-            "admin@example.com",
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+            _user?.email ?? 'N/A',
+            style: TextStyle(fontSize: 14, color: Colors.grey[700]),
           ),
         ],
       ),
@@ -94,33 +169,79 @@ class AdminHome extends StatelessWidget {
     );
   }
 
-  // Logout Dialog
   void _showLogoutDialog(AuthController authController) {
     Get.dialog(
-      AlertDialog(
-        title: const Text("Confirm Logout"),
-        content: const Text("Are you sure you want to logout?"),
-        actions: [
-          TextButton(
-            child: const Text("Cancel"),
-            onPressed: () {
-              Get.back(); // Close dialog
-            },
+      Dialog(
+        backgroundColor: Colors.transparent, // Transparent background
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20), // Rounded edges
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            // Frosted Glass Effect
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                // Semi-transparent background
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      color: Colors.red, size: 50),
+                  const SizedBox(height: 15),
+                  const Text(
+                    "Confirm Logout",
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Are you sure you want to logout?",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      // Cancel Button
+                      TextButton(
+                        onPressed: () => Get.back(),
+                        child: const Text("Cancel",
+                            style: TextStyle(fontSize: 16, color: Colors.blue)),
+                      ),
+                      // Logout Button
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15)),
+                        ),
+                        onPressed: () async {
+                          Get.back(); // Close Dialog
+                          try {
+                            await authController.signOut();
+                          } catch (e) {
+                            print("Error signing out: $e");
+                            Get.snackbar("Logout Failed",
+                                "An error occurred during logout.");
+                          }
+                        },
+                        child: const Text("Logout",
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-          TextButton(
-            child: const Text("Logout"),
-            onPressed: () async {
-              Get.back(); // Close dialog
-              try {
-                await authController.signOut();
-              } catch (e) {
-                print("Error signing out: $e");
-                Get.snackbar(
-                    "Logout Failed", "An error occurred during logout.");
-              }
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

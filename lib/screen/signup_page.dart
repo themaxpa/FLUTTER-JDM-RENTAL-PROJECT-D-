@@ -15,22 +15,31 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _retypePasswordController =
+      TextEditingController();
+
   String _selectedRole = 'user';
   bool _isLoading = false;
   bool isPasswordHidden = true;
+  bool isRetypePasswordHidden = true;
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _retypePasswordController.dispose();
     super.dispose();
   }
 
   Future<void> _signup() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_passwordController.text != _retypePasswordController.text) {
+      _showDialog(
+          'Password Mismatch', 'Passwords do not match. Please re-enter them.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
       String? result = await _authService.signup(
@@ -41,70 +50,51 @@ class _SignupScreenState extends State<SignupScreen> {
       );
 
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-
+        setState(() => _isLoading = false);
         if (result == null) {
-          showCupertinoDialog(
-            context: context,
-            builder: (context) => CupertinoAlertDialog(
-              title: Text('Success'),
-              content: Text('Signup Successful! Now turn to Login'),
-              actions: [
-                CupertinoDialogAction(
-                  child: Text('OK'),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      CupertinoPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          );
+          _showDialog('Success', 'Signup Successful! Now turn to Login',
+              isSuccess: true);
         } else {
-          showCupertinoDialog(
-            context: context,
-            builder: (context) => CupertinoAlertDialog(
-              title: Text('Error'),
-              content: Text('Signup Failed: $result'),
-              actions: [
-                CupertinoDialogAction(
-                  child: Text('OK'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          );
+          _showDialog('Error',
+              'Please fill out all required fields before submitting.');
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        showCupertinoDialog(
-          context: context,
-          builder: (context) => CupertinoAlertDialog(
-            title: Text('Error'),
-            content: Text('An unexpected error occurred: ${e.toString()}'),
-            actions: [
-              CupertinoDialogAction(
-                child: Text('OK'),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
+        setState(() => _isLoading = false);
+        _showDialog('Error', 'An unexpected error occurred: ${e.toString()}');
       }
     }
+  }
+
+  void _showDialog(String title, String content, {bool isSuccess = false}) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () {
+              Navigator.pop(context);
+              if (isSuccess) {
+                Navigator.pushReplacement(
+                  context,
+                  CupertinoPageRoute(builder: (_) => const LoginScreen()),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
+      backgroundColor: Colors.grey[200],
       navigationBar: CupertinoNavigationBar(
         middle: Text('Signup'),
       ),
@@ -115,87 +105,68 @@ class _SignupScreenState extends State<SignupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(child: Image.asset("assets/images/tesla.jpg")),
+                Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      "assets/images/tesla.jpg",
+                      width: 200,
+                      height: 200,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
                 SizedBox(height: 40),
-                CupertinoTextField(
-                  controller: _nameController,
-                  placeholder: 'Name',
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: CupertinoColors.systemGrey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+                _buildTextField(
+                    controller: _nameController, placeholder: 'Name'),
                 SizedBox(height: 16),
-                CupertinoTextField(
-                  controller: _emailController,
-                  placeholder: 'Email',
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: CupertinoColors.systemGrey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
+                _buildTextField(
+                    controller: _emailController, placeholder: 'Email'),
                 SizedBox(height: 16),
-                CupertinoTextField(
+                _buildTextField(
                   controller: _passwordController,
                   placeholder: 'Password',
                   obscureText: isPasswordHidden,
-                  padding: EdgeInsets.all(16),
-                  suffix: CupertinoButton(
-                    child: Icon(
-                      isPasswordHidden
-                          ? CupertinoIcons.eye_slash
-                          : CupertinoIcons.eye,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isPasswordHidden = !isPasswordHidden;
-                      });
-                    },
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: CupertinoColors.systemGrey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  toggleVisibility: () =>
+                      setState(() => isPasswordHidden = !isPasswordHidden),
                 ),
                 SizedBox(height: 16),
-                CupertinoPicker(
-                  itemExtent: 32.0,
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _selectedRole = ['seller', 'user'][index];
-                    });
-                  },
-                  children:
-                      ['seller', 'user'].map((role) => Text(role)).toList(),
+                _buildTextField(
+                  controller: _retypePasswordController,
+                  placeholder: 'Retype Password',
+                  obscureText: isRetypePasswordHidden,
+                  toggleVisibility: () => setState(
+                      () => isRetypePasswordHidden = !isRetypePasswordHidden),
                 ),
                 SizedBox(height: 16),
-                CupertinoButton.filled(
-                  onPressed: _signup,
-                  child: _isLoading
-                      ? CupertinoActivityIndicator()
-                      : Text('Signup'),
+                _buildRolePicker(),
+                SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: CupertinoButton.filled(
+                    onPressed: _signup,
+                    child: _isLoading
+                        ? CupertinoActivityIndicator()
+                        : Text('Signup'),
+                  ),
                 ),
                 SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Material(
-                        child: Text("Already have an account? ",
-                            style: TextStyle(fontSize: 10))),
+                      color: Colors.grey[200],
+                      child: Text("Already have an account? ",
+                          style: TextStyle(fontSize: 10)),
+                    ),
                     CupertinoButton(
-                      child: Material(
-                          child: Text("Login here",
-                              style: TextStyle(
-                                  fontSize: 12, fontWeight: FontWeight.bold))),
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          CupertinoPageRoute(
-                              builder: (_) => const LoginScreen()),
-                        );
-                      },
+                      child: Text("Login here",
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                      onPressed: () => Navigator.pushReplacement(
+                        context,
+                        CupertinoPageRoute(builder: (_) => const LoginScreen()),
+                      ),
                     ),
                   ],
                 ),
@@ -203,6 +174,48 @@ class _SignupScreenState extends State<SignupScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String placeholder,
+    bool obscureText = false,
+    VoidCallback? toggleVisibility,
+  }) {
+    return CupertinoTextField(
+      controller: controller,
+      placeholder: placeholder,
+      obscureText: obscureText,
+      padding: EdgeInsets.all(16),
+      suffix: toggleVisibility != null
+          ? CupertinoButton(
+              child: Icon(
+                  obscureText ? CupertinoIcons.eye_slash : CupertinoIcons.eye),
+              onPressed: toggleVisibility,
+            )
+          : null,
+      decoration: BoxDecoration(
+        border: Border.all(color: CupertinoColors.systemGrey),
+        borderRadius: BorderRadius.circular(8),
+        color: CupertinoColors.systemGrey6,
+      ),
+    );
+  }
+
+  Widget _buildRolePicker() {
+    return Container(
+      height: 100,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: CupertinoPicker(
+        itemExtent: 32.0,
+        onSelectedItemChanged: (int index) =>
+            setState(() => _selectedRole = ['seller', 'user'][index]),
+        children: ['seller', 'user'].map((role) => Text(role)).toList(),
       ),
     );
   }

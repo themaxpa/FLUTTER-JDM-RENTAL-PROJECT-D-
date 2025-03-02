@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -185,29 +187,87 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       endIcon: false,
                       onPress: () {
                         Get.defaultDialog(
-                          title: "LOGOUT",
-                          titleStyle: const TextStyle(fontSize: 20),
-                          content: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 15.0),
-                            child: Text("Are you sure you want to logout?"),
-                          ),
-                          confirm: ElevatedButton(
-                            onPressed: () async {
-                              Get.back(); // Close the dialog
-                              try {
-                                await FirebaseAuth.instance.signOut();
-                                // Navigate to SplashScreenUser and remove all previous routes
-                                // Use Get.offAll to completely replace the current screen
-                                Get.offAll(() => SplashScreen());
-                              } catch (e) {
-                                print("Error signing out: $e");
-                              }
-                            },
-                            child: const Text("Yes"),
-                          ),
-                          cancel: OutlinedButton(
-                            onPressed: () => Get.back(),
-                            child: const Text("No"),
+                          backgroundColor: Colors.white,
+                          middleText: "Logout",
+                          title: "Logout",
+                          // Removes the default title spacing for a cleaner look
+                          barrierDismissible: true,
+                          // Allows dismissing by tapping outside
+                          content: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              // Acrylic Blur
+
+                              child: Container(
+                                padding: EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  // Semi-transparent for iOS feel
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                        LineAwesomeIcons
+                                            .exclamation_circle_solid,
+                                        color: Colors.red,
+                                        size: 50),
+                                    SizedBox(height: 15),
+                                    Text(
+                                      "Are you sure you want to logout?",
+                                      style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        // Cancel Button
+                                        TextButton(
+                                          onPressed: () => Get.back(),
+                                          child: Text(
+                                            "Cancel",
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.blue),
+                                          ),
+                                        ),
+                                        // Confirm Logout Button
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.blueGrey,
+                                            // More noticeable
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                          ),
+                                          onPressed: () async {
+                                            Get.back(); // Close Dialog
+                                            try {
+                                              await FirebaseAuth.instance
+                                                  .signOut();
+                                              Get.offAll(() =>
+                                                  SplashScreen()); // Redirect to SplashScreen
+                                            } catch (e) {
+                                              Get.snackbar("Logout Failed",
+                                                  "An error occurred during logout.");
+                                            }
+                                          },
+                                          child: Text("Logout",
+                                              style: TextStyle(fontSize: 16)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },

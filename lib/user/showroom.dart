@@ -1,20 +1,20 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'package:flutter_app/constants.dart';
 import 'package:flutter_app/user/user_profile.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_app/car_widget.dart';
 import 'package:flutter_app/user/dealer_widget.dart';
 import 'package:flutter_app/available_cars.dart';
 import 'package:flutter_app/user/book_car.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
 import '../screen/notification.dart';
 import '../screen/screen_main.dart';
 import '../seller/data.dart';
+import '../seller/seller_showroom.dart';
 
 class Showroom extends StatefulWidget {
   const Showroom({super.key});
@@ -296,12 +296,21 @@ class _ShowroomState extends State<Showroom> {
                         ),
                         Row(
                           children: [
-                            Text(
-                              "More",
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: kPrimaryColor,
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => SellerShowroom()),
+                                );
+                              },
+                              child: Text(
+                                "More",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: kPrimaryColor,
+                                ),
                               ),
                             ),
                             SizedBox(
