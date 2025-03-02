@@ -40,11 +40,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
+
     try {
       String? role = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
       setState(() => _isLoading = false);
 
       if (role != null) {
@@ -57,19 +59,22 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on FirebaseAuthException catch (e) {
       setState(() => _isLoading = false);
-      if (e.code == 'user-not-found') {
-        _showSnackBar('Error', 'No user found with this email.');
-      } else if (e.code == 'wrong-password') {
-        _showSnackBar('Error', 'Incorrect password. Please try again.');
-      } else if (e.code == 'invalid-email') {
-        _showSnackBar('Error', 'Invalid email format.');
-      } else {
-        _showSnackBar('Error', 'Login failed: ${e.message}');
-      }
+      _handleAuthError(e);
     } catch (error) {
       setState(() => _isLoading = false);
       _showSnackBar('Error', 'An unexpected error occurred. Please try again.');
     }
+  }
+
+  void _handleAuthError(FirebaseAuthException e) {
+    Map<String, String> errorMessages = {
+      'user-not-found': 'No user found with this email.',
+      'wrong-password': 'Incorrect password. Please try again.',
+      'invalid-email': 'Invalid email format.',
+    };
+
+    String message = errorMessages[e.code] ?? 'Login failed: ${e.message}';
+    _showSnackBar('Error', message);
   }
 
   Future<void> _cacheUserRole(String role, String uid) async {
@@ -93,16 +98,19 @@ class _LoginScreenState extends State<LoginScreen> {
       default:
         homeScreen = CupertinoPageScaffold(
           navigationBar: const CupertinoNavigationBar(
-            middle: Center(child: Material(child: Text("Unknown Role"))),
+            middle: Center(
+                child: Material(child: Center(child: Text("Unknown Role")))),
             backgroundColor: CupertinoColors.systemGrey6,
           ),
           child: Center(
             child: Center(
               child: Material(
-                child: Text(
-                  'Unknown Role: $role',
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold),
+                child: Center(
+                  child: Text(
+                    'Unknown Role: $role',
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),

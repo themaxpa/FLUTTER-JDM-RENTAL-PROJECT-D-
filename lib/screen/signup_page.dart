@@ -34,17 +34,17 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _signup() async {
     if (_passwordController.text != _retypePasswordController.text) {
-      _showDialog(
-          'Password Mismatch', 'Passwords do not match. Please re-enter them.');
+      _showDialog('Password Mismatch', 'Passwords do not match.');
       return;
     }
 
     setState(() => _isLoading = true);
+    await Future.delayed(Duration(milliseconds: 100)); // Prevent UI freeze
 
     try {
       String? result = await _authService.signup(
-        name: _nameController.text,
-        email: _emailController.text,
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
         password: _passwordController.text,
         role: _selectedRole,
       );
@@ -52,17 +52,16 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         if (result == null) {
-          _showDialog('Success', 'Signup Successful! Now turn to Login',
+          _showDialog('Success', 'Signup Successful! Please login.',
               isSuccess: true);
         } else {
-          _showDialog('Error',
-              'Please fill out all required fields before submitting.');
+          _showDialog('Error', result);
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showDialog('Error', 'An unexpected error occurred: ${e.toString()}');
+        _showDialog('Error', 'An error occurred: ${e.toString()}');
       }
     }
   }
@@ -95,9 +94,7 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: Colors.grey[200],
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('Signup'),
-      ),
+      navigationBar: CupertinoNavigationBar(middle: Text('Signup')),
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -113,6 +110,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       width: 200,
                       height: 200,
                       fit: BoxFit.cover,
+                      cacheWidth: 200,
+                      // Optimize image loading
+                      cacheHeight: 200,
                     ),
                   ),
                 ),
@@ -144,9 +144,9 @@ class _SignupScreenState extends State<SignupScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: CupertinoButton.filled(
-                    onPressed: _signup,
+                    onPressed: _isLoading ? null : _signup,
                     child: _isLoading
-                        ? CupertinoActivityIndicator()
+                        ? CupertinoActivityIndicator(radius: 10)
                         : Text('Signup'),
                   ),
                 ),
@@ -208,9 +208,7 @@ class _SignupScreenState extends State<SignupScreen> {
     return Container(
       height: 100,
       decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(8),
-      ),
+          color: Colors.grey[300], borderRadius: BorderRadius.circular(8)),
       child: CupertinoPicker(
         itemExtent: 32.0,
         onSelectedItemChanged: (int index) =>

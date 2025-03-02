@@ -119,7 +119,7 @@ class _AdminHomeState extends State<AdminHome> {
           _buildDrawerItem(Icons.calendar_month, "Date", () {
             Navigator.push(
               context,
-              CupertinoPageRoute(builder: (_) => UsersTableScreen()),
+              CupertinoPageRoute(builder: (_) => UsersCardScreen()),
             );
           }),
           _buildDrawerItem(Icons.person, "Profile", () {
