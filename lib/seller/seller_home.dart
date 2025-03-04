@@ -4,6 +4,8 @@ import 'package:flutter_app/seller/seller_bottom_navigation.dart';
 import 'package:flutter_app/seller/add_cars.dart';
 import 'package:flutter_app/seller/seller_profile.dart';
 
+import 'add.dart';
+
 class SellerHome extends StatefulWidget {
   const SellerHome({Key? key}) : super(key: key);
 
@@ -18,6 +20,7 @@ class _SellerHomeState extends State<SellerHome> {
   final List<String> _titles = [
     "Home",
     "Add Cars",
+    "Notification",
     "Profile"
   ]; // Dynamic Titles
 
@@ -26,6 +29,7 @@ class _SellerHomeState extends State<SellerHome> {
         child: Text('Home',
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold))),
     AddCars(),
+    CreateAdScreen(),
     SellerProfileScreen(),
   ];
 

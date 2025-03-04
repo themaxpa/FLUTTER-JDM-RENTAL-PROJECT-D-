@@ -1,14 +1,15 @@
+import 'dart:io';
 import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 import 'package:flutter_app/screen/screen_splash.dart';
 import 'package:flutter_app/user/update_user_profile.dart';
 import 'package:flutter_app/user/user_profile_widget_menu.dart';
-import 'package:line_awesome_flutter/line_awesome_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -22,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   User? _user;
-  DocumentSnapshot? _userData;
+  Map<String, dynamic>? _userData;
   bool _isLoading = true;
 
   @override
@@ -31,44 +32,57 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
+  /// Fetch user data from Firebase
   Future<void> _loadUserData() async {
-    setState(() {
-      _isLoading = true; // Show loading indicator
-    });
+    setState(() => _isLoading = true);
 
-    _user = _auth.currentUser; // Get the current user
+    _user = _auth.currentUser;
 
     if (_user != null) {
       try {
         DocumentSnapshot snapshot =
             await _firestore.collection('users').doc(_user!.uid).get();
 
-        // Check if the document exists before accessing its data
         if (snapshot.exists && snapshot.data() != null) {
           setState(() {
-            _userData = snapshot;
-            _isLoading = false; // Hide loading indicator
-          });
-        } else {
-          print("User data does not exist for user ID: ${_user!.uid}");
-          // Handle the case where user data doesn't exist
-          _userData = null; // Set _userData to null
-          setState(() {
-            _isLoading = false; // Hide loading indicator
+            _userData = snapshot.data() as Map<String, dynamic>;
           });
         }
       } catch (error) {
         print("Error fetching user data: $error");
-        // Handle error (e.g., show an error message)
-        setState(() {
-          _isLoading = false; // Hide loading indicator
-        });
       }
-    } else {
-      print("No user logged in.");
-      setState(() {
-        _isLoading = false; // Hide loading indicator
-      });
+    }
+
+    setState(() => _isLoading = false);
+  }
+
+  /// Upload image to Cloudinary and update Firestore
+  Future<void> _uploadImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+    if (image == null) return;
+
+    final cloudinary = CloudinaryPublic('dageosse2', 'project-d', cache: false);
+
+    try {
+      CloudinaryResponse response = await cloudinary.uploadFile(
+        CloudinaryFile.fromFile(image.path,
+            resourceType: CloudinaryResourceType.Image),
+      );
+
+      String imageUrl = response.secureUrl;
+
+      // Store image URL in Firestore
+      await _firestore
+          .collection('users')
+          .doc(_user!.uid)
+          .update({'profileImage': imageUrl});
+
+      // Reload user data from Firestore after updating
+      await _loadUserData();
+    } catch (e) {
+      print("Upload failed: $e");
     }
   }
 
@@ -76,13 +90,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
               child: Container(
                 padding: const EdgeInsets.all(20),
@@ -91,31 +101,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     /// -- IMAGE
                     Stack(
                       children: [
-                        SizedBox(
-                          width: 120,
-                          height: 120,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(100),
-                            child: const Image(
-                              image: AssetImage('assets/images/ph12.jpg'),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: _userData != null &&
+                                  _userData!['profileImage'] != null
+                              ? Image.network(
+                                  _userData!['profileImage'],
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.asset(
+                                  'assets/images/ph12.jpg',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                ),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
-                          child: Container(
-                            width: 35,
-                            height: 35,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(100),
-                              color: Colors.yellow,
-                            ),
-                            child: const Icon(
-                              LineAwesomeIcons.pencil_alt_solid,
-                              color: Colors.black,
-                              size: 20,
+                          child: GestureDetector(
+                            onTap: _uploadImage,
+                            child: Container(
+                              width: 35,
+                              height: 35,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                color: Colors.yellow,
+                              ),
+                              child: const Icon(
+                                LineAwesomeIcons.pencil_alt_solid,
+                                color: Colors.black,
+                                size: 20,
+                              ),
                             ),
                           ),
                         ),
@@ -123,12 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      _userData != null &&
-                              _userData!.exists &&
-                              _userData!.data() != null
-                          ? (_userData!['name'] as String? ??
-                              'N/A') // Use null safety
-                          : 'N/A',
+                      _userData != null ? (_userData!['name'] ?? 'N/A') : 'N/A',
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
                     Text(
@@ -144,13 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         onPressed: () =>
                             Get.to(() => const UpdateProfileScreen()),
                         child: const Text('Edit Profile'),
-                        style: ElevatedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(2.0),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 15),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -159,27 +166,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                     /// -- MENU
                     ProfileMenuWidget(
-                      title: "Settings",
-                      icon: LineAwesomeIcons.cog_solid,
-                      onPress: () {},
-                    ),
+                        title: "Settings",
+                        icon: LineAwesomeIcons.cog_solid,
+                        onPress: () {}),
                     ProfileMenuWidget(
-                      title: "My Documents",
-                      icon: LineAwesomeIcons.wallet_solid,
-                      onPress: () {},
-                    ),
+                        title: "My Documents",
+                        icon: LineAwesomeIcons.wallet_solid,
+                        onPress: () {}),
                     ProfileMenuWidget(
-                      title: "Support",
-                      icon: LineAwesomeIcons.user_check_solid,
-                      onPress: () {},
-                    ),
+                        title: "Support",
+                        icon: LineAwesomeIcons.user_check_solid,
+                        onPress: () {}),
                     const Divider(),
                     const SizedBox(height: 10),
                     ProfileMenuWidget(
-                      title: "Information",
-                      icon: LineAwesomeIcons.info_solid,
-                      onPress: () {},
-                    ),
+                        title: "Information",
+                        icon: LineAwesomeIcons.info_solid,
+                        onPress: () {}),
                     ProfileMenuWidget(
                       title: "Logout",
                       icon: LineAwesomeIcons.sign_out_alt_solid,
@@ -190,20 +193,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           backgroundColor: Colors.white,
                           middleText: "Logout",
                           title: "Logout",
-                          // Removes the default title spacing for a cleaner look
                           barrierDismissible: true,
-                          // Allows dismissing by tapping outside
                           content: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: BackdropFilter(
                               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              // Acrylic Blur
-
                               child: Container(
-                                padding: EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.9),
-                                  // Semi-transparent for iOS feel
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Column(
@@ -214,53 +212,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             .exclamation_circle_solid,
                                         color: Colors.red,
                                         size: 50),
-                                    SizedBox(height: 15),
-                                    Text(
+                                    const SizedBox(height: 15),
+                                    const Text(
                                       "Are you sure you want to logout?",
                                       style: TextStyle(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w600),
                                       textAlign: TextAlign.center,
                                     ),
-                                    SizedBox(height: 20),
+                                    const SizedBox(height: 20),
                                     Row(
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        // Cancel Button
                                         TextButton(
-                                          onPressed: () => Get.back(),
-                                          child: Text(
-                                            "Cancel",
-                                            style: TextStyle(
-                                                fontSize: 16,
-                                                color: Colors.blue),
-                                          ),
-                                        ),
-                                        // Confirm Logout Button
+                                            onPressed: () => Get.back(),
+                                            child: const Text("Cancel")),
                                         ElevatedButton(
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.blueGrey,
-                                            // More noticeable
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
-                                            ),
-                                          ),
                                           onPressed: () async {
-                                            Get.back(); // Close Dialog
+                                            Get.back();
                                             try {
                                               await FirebaseAuth.instance
                                                   .signOut();
-                                              Get.offAll(() =>
-                                                  SplashScreen()); // Redirect to SplashScreen
+                                              Get.offAll(
+                                                  () => const SplashScreen());
                                             } catch (e) {
                                               Get.snackbar("Logout Failed",
                                                   "An error occurred during logout.");
                                             }
                                           },
-                                          child: Text("Logout",
-                                              style: TextStyle(fontSize: 16)),
+                                          child: const Text("Logout"),
                                         ),
                                       ],
                                     ),

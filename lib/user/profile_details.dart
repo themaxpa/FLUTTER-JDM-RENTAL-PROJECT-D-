@@ -95,18 +95,23 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
 
                             // User Details
                             Material(
+                                color: Colors.grey[200],
                                 child:
                                     _buildInfoRow('Name', _userData!['name'])),
                             Material(
+                                color: Colors.grey[200],
                                 child: _buildInfoRow(
                                     'Email', _userData!['email'])),
                             Material(
+                                color: Colors.grey[200],
                                 child: _buildInfoRow(
                                     'Phone', _userData!['phone'])),
                             Material(
+                                color: Colors.grey[200],
                                 child: _buildInfoRow(
                                     'Location', _userData!['location'])),
                             Material(
+                                color: Colors.grey[200],
                                 child:
                                     _buildInfoRow('Role', _userData!['role'])),
 
@@ -144,6 +149,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Material(
+              color: Colors.grey[200],
               child: Text(
                 label,
                 style: const TextStyle(
@@ -154,6 +160,7 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
               ),
             ),
             Material(
+              color: Colors.grey[200],
               child: Text(
                 value ?? 'N/A',
                 style: const TextStyle(

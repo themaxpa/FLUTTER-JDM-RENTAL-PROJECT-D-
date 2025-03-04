@@ -27,6 +27,10 @@ class SellerBottomNavigation extends StatelessWidget {
           label: 'Cars',
         ),
         BottomNavigationBarItem(
+          icon: Icon(CupertinoIcons.news), // iOS-style icon
+          label: 'Notification',
+        ),
+        BottomNavigationBarItem(
           icon: Icon(CupertinoIcons.person), // iOS-style icon
           label: 'Profile',
         ),
