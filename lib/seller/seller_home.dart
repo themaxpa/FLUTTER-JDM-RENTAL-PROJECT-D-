@@ -30,7 +30,7 @@ class _SellerHomeState extends State<SellerHome> {
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold))),
     AddCars(),
     CreateAdScreen(),
-    SellerProfileScreen(),
+    SellerProfile(),
   ];
 
   void _onItemTapped(int index) {

@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // iOS Icons
 
 class SellerBottomNavigation extends StatelessWidget {
   final int selectedIndex;
@@ -13,34 +13,47 @@ class SellerBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      backgroundColor: Colors.white,
-      type: BottomNavigationBarType.fixed,
-      // Keeps labels visible
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.house), // iOS-style icon
-          label: 'Home',
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(25),
+        topRight: Radius.circular(25),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemBackground.withOpacity(0.9),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.car), // iOS-style icon
-          label: 'Cars',
+        child: CupertinoTabBar(
+          backgroundColor: CupertinoColors.systemBackground.withOpacity(0.8),
+          activeColor: CupertinoColors.activeBlue,
+          inactiveColor: CupertinoColors.systemGrey,
+          currentIndex: selectedIndex,
+          onTap: onItemTapped,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.house),
+              // label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.car_detailed),
+              // label: 'Cars',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.bell),
+              // label: 'Alerts',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.person),
+              // label: 'Profile',
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.news), // iOS-style icon
-          label: 'Notification',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(CupertinoIcons.person), // iOS-style icon
-          label: 'Profile',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: Color(0xFF20232B),
-      // iOS-style color
-      unselectedItemColor: Colors.grey,
-      // iOS-style inactive color
-      onTap: onItemTapped,
+      ),
     );
   }
 }
