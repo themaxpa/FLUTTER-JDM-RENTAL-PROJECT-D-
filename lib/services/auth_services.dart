@@ -1,5 +1,3 @@
-// auth_service.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -30,11 +28,31 @@ class AuthService {
         'role': role,
       });
 
+      // Create 'MyDocuments' subcollection for the user
+      await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .collection('MyDocuments')
+          .doc('initialDocument') // Optional: Create an initial document
+          .set({
+        'title': 'Initial Document',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
       return null; // Return null on successful signup
     } on FirebaseAuthException catch (e) {
-      return e.message; // Return error message if signup fails
+      // Handle FirebaseAuth errors (e.g., email already in use, weak password)
+      if (e.code == 'weak-password') {
+        return 'The password is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        return 'The email address is already in use.';
+      } else {
+        return e.message ?? 'An error occurred during signup.';
+      }
     } catch (e) {
-      return 'An unexpected error occurred.'; // Handle other errors
+      // Handle any other errors (e.g., Firestore issues)
+      print("Error: $e");
+      return 'An unexpected error occurred: ${e.toString()}';
     }
   }
 
@@ -71,7 +89,7 @@ class AuthService {
     }
   }
 
-  //SignOut Function
+  // SignOut Function
   Future<void> signOut() async {
     await _auth.signOut();
   }

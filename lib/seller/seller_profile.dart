@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/seller/seller_edit_profile.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
@@ -137,7 +138,7 @@ class _SellerProfileState extends State<SellerProfile> {
           radius: 60,
           backgroundImage: _userData?['profileImage'] != null
               ? NetworkImage(_userData!['profileImage'])
-              : const AssetImage('assets/images/ph12.jpg') as ImageProvider,
+              : const AssetImage('assets/images/img.jpg') as ImageProvider,
           backgroundColor: Colors.grey.shade200,
         ),
         CupertinoButton(
@@ -220,7 +221,7 @@ class _SellerProfileState extends State<SellerProfile> {
                   _buildProfileInfo(),
                   const SizedBox(height: 20),
                   _buildMenuItem("Edit Profile", CupertinoIcons.pencil,
-                      () => Get.to(() => const UpdateProfileScreen())),
+                      () => Get.to(() => const SellerUpdateProfileScreen())),
                   _buildMenuItem("Settings", CupertinoIcons.gear_alt, () {}),
                   _buildMenuItem("My Documents", CupertinoIcons.doc_text, () {
                     Get.to(() => MyDocumentsScreen());

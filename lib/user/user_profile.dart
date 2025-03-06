@@ -1,14 +1,12 @@
-import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:flutter_app/screen/screen_splash.dart';
 import 'package:flutter_app/user/update_user_profile.dart';
-import 'package:flutter_app/user/user_profile_widget_menu.dart';
 import 'my_documents.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -136,7 +134,7 @@ class _SellerProfileState extends State<ProfileScreen> {
           radius: 60,
           backgroundImage: _userData?['profileImage'] != null
               ? NetworkImage(_userData!['profileImage'])
-              : const AssetImage('assets/images/ph12.jpg') as ImageProvider,
+              : const AssetImage('assets/images/img.jpg') as ImageProvider,
           backgroundColor: Colors.grey.shade200,
         ),
         CupertinoButton(

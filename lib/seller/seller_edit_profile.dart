@@ -4,14 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class UpdateProfileScreen extends StatefulWidget {
-  const UpdateProfileScreen({super.key});
+class SellerUpdateProfileScreen extends StatefulWidget {
+  const SellerUpdateProfileScreen({super.key});
 
   @override
-  _UpdateProfileScreenState createState() => _UpdateProfileScreenState();
+  _SellerUpdateProfileScreenState createState() =>
+      _SellerUpdateProfileScreenState();
 }
 
-class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
+class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();

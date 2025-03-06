@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MyDocumentsScreen extends StatefulWidget {
   @override
@@ -11,6 +13,34 @@ class MyDocumentsScreen extends StatefulWidget {
 }
 
 class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
+  Future<String?> uploadImageToCloudinary(File imageFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.cloudinary.com/v1_1/dageosse2/image/upload'),
+      );
+      request.fields['upload_preset'] =
+          'project-d'; // Your Cloudinary upload preset
+      request.files
+          .add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        var responseData = await response.stream.bytesToString();
+        var jsonData = json.decode(responseData);
+        return jsonData['secure_url']; // Returns the uploaded image URL
+      } else {
+        print("Cloudinary Upload Failed: ${response.reasonPhrase}");
+        return null;
+      }
+    } catch (e) {
+      print("Error uploading image: $e");
+      return null;
+    }
+  }
+
+  final ImagePicker _picker = ImagePicker();
   final List<Map<String, dynamic>> documents = [
     {
       "title": "DL Front Side",
@@ -34,10 +64,44 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
     },
   ];
 
-  final ImagePicker _picker = ImagePicker();
+  @override
+  void initState() {
+    super.initState();
+    _fetchUploadedDocuments(); // Load existing documents on startup
+  }
+
+  Future<void> _fetchUploadedDocuments() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final String userId = user.uid;
+    final snapshot = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(userId)
+        .collection("MyDocuments")
+        .get();
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final title = data["title"];
+      final url = data["url"];
+
+      // Find the matching document in the list and update its URL
+      for (var document in documents) {
+        if (document["title"] == title) {
+          setState(() {
+            document["url"] = url;
+          });
+        }
+      }
+    }
+  }
 
   Future<void> _pickImage(int index) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final ImageSource? source = await _showImageSourceDialog();
+    if (source == null) return;
+
+    final pickedFile = await _picker.pickImage(source: source);
     if (pickedFile != null) {
       File imageFile = File(pickedFile.path);
       setState(() {
@@ -56,43 +120,67 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
     }
   }
 
-  Future<String?> uploadImageToCloudinary(File imageFile) async {
-    try {
-      var request = http.MultipartRequest(
-        'POST',
-        Uri.parse('https://api.cloudinary.com/v1_1/dageosse2/image/upload'),
-      );
-      request.fields['upload_preset'] = 'project-d';
-      request.files
-          .add(await http.MultipartFile.fromPath('file', imageFile.path));
-      var response = await request.send();
-
-      if (response.statusCode == 200) {
-        var responseData = await response.stream.bytesToString();
-        var jsonData = json.decode(responseData);
-        return jsonData['secure_url'];
-      } else {
-        print("Cloudinary Upload Failed: \${response.reasonPhrase}");
-        return null;
-      }
-    } catch (e) {
-      print("Error uploading image: \$e");
-      return null;
-    }
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return await showCupertinoModalPopup<ImageSource>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text("Select Image Source"),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: Text("Camera"),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: Text("Gallery"),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: Text("Cancel",
+              style: TextStyle(color: CupertinoColors.destructiveRed)),
+        ),
+      ),
+    );
   }
 
   Future<void> _submitData(int index) async {
-    if (documents[index]["url"] != null) {
-      await FirebaseFirestore.instance.collection("user_documents").add({
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("User not authenticated."),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final String userId = user.uid;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(userId)
+          .collection("MyDocuments")
+          .doc(documents[index]["title"]) // Save with title as doc ID
+          .set({
         "title": documents[index]["title"],
         "url": documents[index]["url"],
         "timestamp": FieldValue.serverTimestamp(),
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content:
                 Text("${documents[index]["title"]} Uploaded Successfully!"),
             backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      print("Error saving document: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text("Failed to save document."),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -136,12 +224,13 @@ class DocumentItem extends StatelessWidget {
   final bool isUploading;
   final VoidCallback onUpload;
 
-  const DocumentItem(
-      {required this.title,
-      required this.image,
-      required this.url,
-      required this.isUploading,
-      required this.onUpload});
+  const DocumentItem({
+    required this.title,
+    required this.image,
+    required this.url,
+    required this.isUploading,
+    required this.onUpload,
+  });
 
   @override
   Widget build(BuildContext context) {
