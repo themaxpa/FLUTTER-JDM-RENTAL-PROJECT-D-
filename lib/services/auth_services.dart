@@ -20,18 +20,24 @@ class AuthService {
         password: password,
       );
 
-      // Store additional user data in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'uid': userCredential.user!.uid,
+      String uid = userCredential.user!.uid;
+
+      // Store user data in Firestore with default fields
+      await _firestore.collection('users').doc(uid).set({
+        'uid': uid,
         'name': name,
         'email': email,
         'role': role,
+        'profileImage': '', // Default empty profile image
+        'phone': '', // Default empty phone number
+        'location': '', // Default empty location
+        'createdAt': FieldValue.serverTimestamp(), // Store signup timestamp
       });
 
       // Create 'MyDocuments' subcollection for the user
       await _firestore
           .collection('users')
-          .doc(userCredential.user!.uid)
+          .doc(uid)
           .collection('MyDocuments')
           .doc('initialDocument') // Optional: Create an initial document
           .set({
@@ -41,7 +47,6 @@ class AuthService {
 
       return null; // Return null on successful signup
     } on FirebaseAuthException catch (e) {
-      // Handle FirebaseAuth errors (e.g., email already in use, weak password)
       if (e.code == 'weak-password') {
         return 'The password is too weak.';
       } else if (e.code == 'email-already-in-use') {
@@ -50,7 +55,6 @@ class AuthService {
         return e.message ?? 'An error occurred during signup.';
       }
     } catch (e) {
-      // Handle any other errors (e.g., Firestore issues)
       print("Error: $e");
       return 'An unexpected error occurred: ${e.toString()}';
     }
@@ -75,17 +79,16 @@ class AuthService {
           .get();
 
       if (userDoc.exists) {
-        // Use toLowerCase for case-insensitive comparison
         String role = (userDoc['role'] as String? ?? '').toLowerCase();
         return role; // Return the user's role on successful login
       } else {
-        return 'Failed to fetch user role.'; // Handle case where role is not found
+        return 'Failed to fetch user role.';
       }
     } on FirebaseAuthException catch (e) {
-      return e.message; // Return Firebase Auth error message
+      return e.message;
     } catch (e) {
       print(e);
-      return 'An unexpected error occurred.'; // Handle other errors
+      return 'An unexpected error occurred.';
     }
   }
 
