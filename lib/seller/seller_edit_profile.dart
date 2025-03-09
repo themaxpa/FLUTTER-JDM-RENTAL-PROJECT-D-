@@ -20,6 +20,7 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
   final TextEditingController locationController = TextEditingController();
 
   String? profileImageUrl;
+  String? userRole;
   bool isLoadingImage = true;
 
   @override
@@ -36,7 +37,7 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
   Future<void> fetchUserData(String uid) async {
     try {
       final userDoc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+          await FirebaseFirestore.instance.collection('vendors').doc(uid).get();
       if (userDoc.exists) {
         final data = userDoc.data();
         if (data != null) {
@@ -44,6 +45,7 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
             nameController.text = data['name'] ?? '';
             phoneController.text = data['phone'] ?? '';
             locationController.text = data['location'] ?? '';
+            userRole = data['role'] ?? 'Vendor'; // Fetch role
             profileImageUrl = data['profileImage'] ?? '';
             isLoadingImage = false;
           });
@@ -64,7 +66,7 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
 
     try {
       await user.updateDisplayName(nameController.text);
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      await FirebaseFirestore.instance.collection('vendors').doc(user.uid).set({
         "name": nameController.text,
         "email": emailController.text,
         "phone": phoneController.text,
@@ -100,6 +102,8 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                   CupertinoIcons.phone, "Phone", phoneController.text),
               _buildCupertinoListTile(
                   CupertinoIcons.location, "Location", locationController.text),
+              _buildCupertinoListTile(
+                  CupertinoIcons.person_crop_circle, "Role", userRole ?? 'N/A'),
             ],
           ),
           cancelButton: CupertinoActionSheetAction(
@@ -141,7 +145,6 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                 child: Column(
                   children: [
-                    /// Profile Picture
                     /// Profile Picture Section
                     Center(
                       child: CupertinoContextMenu(
@@ -237,7 +240,6 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                         onPressed: updateUserProfile,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         color: CupertinoColors.black,
-                        // Black button
                         borderRadius: BorderRadius.circular(12),
                         child: const Text(
                           'Update Profile',
@@ -254,7 +256,6 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                         onPressed: showUserDetailsDrawer,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         color: CupertinoColors.white,
-                        // White background
                         borderRadius: BorderRadius.circular(12),
                         child: const Text(
                           'User Details',

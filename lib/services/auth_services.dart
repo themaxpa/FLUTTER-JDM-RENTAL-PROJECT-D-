@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -20,43 +21,43 @@ class AuthService {
         password: password,
       );
 
-      String uid = userCredential.user!.uid;
+      User? user = userCredential.user;
+      if (user == null) return 'User creation failed.';
 
-      // Store user data in Firestore with default fields
-      await _firestore.collection('users').doc(uid).set({
+      String uid = user.uid;
+      String roleLower = role.toLowerCase();
+      String collection = _getCollectionForRole(roleLower);
+      if (collection.isEmpty) return "Invalid role specified.";
+
+      WriteBatch batch = _firestore.batch();
+      DocumentReference userRef = _firestore.collection(collection).doc(uid);
+
+      // Store user data in Firestore
+      batch.set(userRef, {
         'uid': uid,
         'name': name,
         'email': email,
-        'role': role,
-        'profileImage': '', // Default empty profile image
-        'phone': '', // Default empty phone number
-        'location': '', // Default empty location
-        'createdAt': FieldValue.serverTimestamp(), // Store signup timestamp
+        'role': roleLower,
+        'profileImage': '',
+        'phone': '',
+        'location': '',
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Create 'MyDocuments' subcollection for the user
-      await _firestore
-          .collection('users')
-          .doc(uid)
-          .collection('MyDocuments')
-          .doc('initialDocument') // Optional: Create an initial document
-          .set({
-        'title': 'Initial Document',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      return null; // Return null on successful signup
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'weak-password') {
-        return 'The password is too weak.';
-      } else if (e.code == 'email-already-in-use') {
-        return 'The email address is already in use.';
-      } else {
-        return e.message ?? 'An error occurred during signup.';
+      // Create role-specific subcollections
+      if (roleLower == 'vendor') {
+        _addVendorSubcollections(uid, batch);
+      } else if (roleLower == 'user') {
+        _addUserSubcollection(uid, batch);
       }
+
+      await batch.commit();
+      return null; // Successful signup
+    } on FirebaseAuthException catch (e) {
+      return _handleAuthError(e);
     } catch (e) {
-      print("Error: $e");
-      return 'An unexpected error occurred: ${e.toString()}';
+      debugPrint("🔥 Signup Error: $e");
+      return 'An unexpected error occurred.';
     }
   }
 
@@ -66,34 +67,160 @@ class AuthService {
     required String password,
   }) async {
     try {
-      // Sign in user with email and password
-      await _auth.signInWithEmailAndPassword(
+      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Get the user's role from Firestore
-      DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(_auth.currentUser!.uid)
-          .get();
+      User? user = userCredential.user;
+      if (user == null) return 'Login failed. Please try again.';
 
-      if (userDoc.exists) {
-        String role = (userDoc['role'] as String? ?? '').toLowerCase();
-        return role; // Return the user's role on successful login
-      } else {
-        return 'Failed to fetch user role.';
+      String uid = user.uid;
+      String? role = await _getUserRoleFromFirestore(uid);
+      if (role == null) return 'User data not found.';
+
+      if (role == 'user' || role == 'vendor') {
+        await _ensurePhoneAndLocation(uid, role);
       }
+
+      debugPrint("✅ Login Successful: Role - $role");
+      return role;
     } on FirebaseAuthException catch (e) {
-      return e.message;
+      return _handleAuthError(e);
     } catch (e) {
-      print(e);
+      debugPrint("🔥 Login Error: $e");
       return 'An unexpected error occurred.';
     }
   }
 
+  // Ensure phone and location exist
+  Future<void> _ensurePhoneAndLocation(String uid, String role) async {
+    String collection = _getCollectionForRole(role);
+    if (collection.isEmpty) return;
+
+    DocumentReference userRef = _firestore.collection(collection).doc(uid);
+    DocumentSnapshot doc = await userRef.get();
+    Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+
+    if (data != null) {
+      Map<String, dynamic> updateData = {};
+
+      if (data['phone'] == null || data['phone'].toString().isEmpty) {
+        updateData['phone'] = '';
+      }
+
+      if (data['location'] == null || data['location'].toString().isEmpty) {
+        updateData['location'] = '';
+      }
+
+      if (updateData.isNotEmpty) {
+        await userRef.update(updateData);
+        debugPrint("📌 Updated phone & location for $role: $uid");
+      }
+    }
+  }
+
+  // Fetch User Role from Firestore
+  Future<String?> _getUserRoleFromFirestore(String uid) async {
+    try {
+      debugPrint("🔍 Checking role for UID: $uid");
+
+      List<String> collections = ['admin', 'vendors', 'users'];
+      for (String collection in collections) {
+        DocumentSnapshot doc =
+            await _firestore.collection(collection).doc(uid).get();
+        if (doc.exists) {
+          Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+          if (data != null) {
+            return data['role']?.toString().toLowerCase();
+          }
+        }
+      }
+
+      debugPrint("❌ No role found for UID: $uid");
+      return null;
+    } catch (e) {
+      debugPrint("🔥 Error fetching role: $e");
+      return null;
+    }
+  }
+
+  // Create User Subcollection
+  void _addUserSubcollection(String uid, WriteBatch batch) {
+    batch.set(
+        _firestore.collection('users').doc(uid).collection('MyDocuments').doc(),
+        {
+          'title': 'Initial Document',
+          'timestamp': FieldValue.serverTimestamp()
+        });
+  }
+
+  // Create Vendor Subcollections
+  void _addVendorSubcollections(String uid, WriteBatch batch) {
+    batch.set(
+        _firestore
+            .collection('vendors')
+            .doc(uid)
+            .collection('CarDetails')
+            .doc(),
+        {
+          'carName': 'Sample Car',
+          'brand': 'Default Brand',
+          'price': 0,
+          'year': DateTime.now().year,
+          'createdAt': FieldValue.serverTimestamp()
+        });
+
+    batch.set(
+        _firestore
+            .collection('vendors')
+            .doc(uid)
+            .collection('CompanyDetails')
+            .doc(),
+        {
+          'companyName': 'Default Company',
+          'location': 'Not specified',
+          'contact': '',
+          'createdAt': FieldValue.serverTimestamp()
+        });
+  }
+
+  // Determine Firestore Collection for Role
+  String _getCollectionForRole(String role) {
+    switch (role) {
+      case 'admin':
+        return 'admin';
+      case 'vendor':
+        return 'vendors';
+      case 'user':
+        return 'users';
+      default:
+        return '';
+    }
+  }
+
+  // Handle FirebaseAuthException Errors
+  String _handleAuthError(FirebaseAuthException e) {
+    const errorMessages = {
+      'weak-password': 'The password is too weak.',
+      'email-already-in-use': 'The email address is already in use.',
+      'user-not-found': 'No user found with this email.',
+      'wrong-password': 'Incorrect password.',
+      'invalid-email': 'Invalid email format.',
+    };
+    return errorMessages[e.code] ??
+        e.message ??
+        'An authentication error occurred.';
+  }
+
   // SignOut Function
-  Future<void> signOut() async {
-    await _auth.signOut();
+  Future<String?> signOut() async {
+    try {
+      await _auth.signOut();
+      return null;
+    } catch (e) {
+      debugPrint("🔥 SignOut Error: $e");
+      return 'An error occurred while signing out.';
+    }
   }
 }

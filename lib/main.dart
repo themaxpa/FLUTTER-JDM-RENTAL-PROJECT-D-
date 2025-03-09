@@ -10,7 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app/seller/seller_home.dart';
 import 'package:flutter_app/user/showroom.dart';
 import 'admin/home.dart';
-import 'package:flutter_app/screen/fullscreen.dart';
 import 'package:flutter_app/screen/screen_splash.dart';
 
 const String ROLE_KEY = 'user_role';
@@ -36,21 +35,19 @@ class MyApp extends StatelessWidget {
         textTheme: GoogleFonts.mulishTextTheme(),
       ),
       debugShowCheckedModeBanner: false,
-      home: AuthCheck(),
+      home: const AuthCheck(),
     );
   }
 }
 
 class AuthCheck extends StatefulWidget {
-  const AuthCheck({super.key});
+  const AuthCheck({Key? key}) : super(key: key);
 
   @override
   _AuthCheckState createState() => _AuthCheckState();
 }
 
 class _AuthCheckState extends State<AuthCheck> {
-  String? _cachedRole;
-  String? _cachedUid;
   bool _isLoading = true;
 
   @override
@@ -60,29 +57,22 @@ class _AuthCheckState extends State<AuthCheck> {
   }
 
   Future<void> _checkAuthAndRole() async {
-    final user = FirebaseAuth.instance.currentUser;
+    User? user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
       final prefs = await SharedPreferences.getInstance();
-      _cachedRole = prefs.getString(ROLE_KEY);
-      _cachedUid = prefs.getString(UID_KEY);
+      String? cachedRole = prefs.getString(ROLE_KEY);
+      String? cachedUid = prefs.getString(UID_KEY);
 
-      //Also check the User to verify current user;
-      if (_cachedRole != null && _cachedUid == user.uid) {
-        //Navigate to the homeScreen with push and Remove Until to never allow the back button
-        _navigateToHomeScreen(_cachedRole!);
+      if (cachedRole != null && cachedUid == user.uid) {
+        _navigateToHomeScreen(cachedRole);
       } else {
-        final authController = Get.find<AuthController>();
         try {
-          String role = await authController.getUserRole(user.uid);
-          //Cache the role
-          _cacheUserRole(role, user.uid);
-
-          //Navigate to homeScreen
+          String role = await Get.find<AuthController>().getUserRole(user.uid);
+          await _cacheUserRole(role, user.uid);
           _navigateToHomeScreen(role);
         } catch (error) {
           print("Error fetching user role: $error");
-          //If for some reason it is unable to redirect
           _navigateToSplashScreen();
         }
       }
@@ -97,47 +87,45 @@ class _AuthCheckState extends State<AuthCheck> {
     }
   }
 
-  // Navigate to the HomeScreen
-  void _navigateToHomeScreen(String role) {
-    print("Navigating to home screen for role: $role"); // Debugging
-
-    Widget homeScreen;
-
-    if (role.trim().toLowerCase() == 'admin') {
-      homeScreen = const AdminHome();
-    } else if (role.trim().toLowerCase() == 'seller') {
-      homeScreen = const SellerHome();
-    } else if (role.trim().toLowerCase() == 'user') {
-      homeScreen = const Showroom();
-    } else {
-      print("Invalid role detected: $role"); // Debugging
-      homeScreen = const FullScreenBackground(); // Default case
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => homeScreen),
-        (route) => false,
-      );
-    });
-  }
-
-  //If the app is unable to get the desired user, Navigate to the login Screen.
-  void _navigateToSplashScreen() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const SplashScreen()),
-          (route) => false);
-    });
-  }
-
   Future<void> _cacheUserRole(String role, String uid) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(ROLE_KEY, role.trim().toLowerCase());
     await prefs.setString(UID_KEY, uid);
-    print("Cached Role: ${prefs.getString(ROLE_KEY)}"); // Debugging
+    print("Cached Role: ${prefs.getString(ROLE_KEY)}");
+  }
+
+  void _navigateToHomeScreen(String role) {
+    // Determine the correct home screen based on the user role.
+    Widget? homeScreen;
+    switch (role.trim().toLowerCase()) {
+      case 'admin':
+        homeScreen = const AdminHome();
+        break;
+      case 'vendor':
+      case 'vendors':
+        homeScreen = const SellerHome();
+        break;
+      case 'user':
+      case 'users':
+        homeScreen = const Showroom();
+        break;
+      default:
+        print("Invalid role detected: $role");
+        // If role is invalid, fallback to the splash screen.
+        _navigateToSplashScreen();
+        return;
+    }
+
+    // Navigate after the current frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAll(() => homeScreen!);
+    });
+  }
+
+  void _navigateToSplashScreen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.offAll(() => const SplashScreen());
+    });
   }
 
   @override
@@ -160,25 +148,49 @@ class AuthController extends GetxController {
   }
 
   Future<String> getUserRole(String uid) async {
-    try {
-      DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(uid).get();
-
-      if (userDoc.exists) {
-        var data = userDoc.data() as Map<String, dynamic>?;
-        String? role = data?['ROLE'];
-
-        if (role != null) {
-          print("Fetched role from Firestore: $role"); // Debugging
-          return role.trim().toLowerCase();
-        }
-      }
-      print('User document does not exist for UID: $uid');
-      return 'user'; // Default to 'user' if no role found
-    } catch (e) {
-      print('Error fetching user role: $e');
-      return 'user';
+    // Helper function to safely get the role from a document's data.
+    String? extractRole(Map<String, dynamic>? data) {
+      if (data == null) return null;
+      // Try both uppercase and lowercase field keys.
+      return (data['ROLE'] ?? data['role'])?.toString();
     }
+
+    // Check the 'admin' collection.
+    DocumentSnapshot adminDoc =
+        await _firestore.collection('admin').doc(uid).get();
+    if (adminDoc.exists) {
+      String? role = extractRole(adminDoc.data() as Map<String, dynamic>?);
+      if (role != null && role.isNotEmpty) {
+        print("User found in 'admin' collection with role: $role");
+        return role.trim().toLowerCase();
+      }
+    }
+
+    // Check the 'vendors' collection.
+    DocumentSnapshot vendorDoc =
+        await _firestore.collection('vendors').doc(uid).get();
+    if (vendorDoc.exists) {
+      String? role = extractRole(vendorDoc.data() as Map<String, dynamic>?);
+      if (role != null && role.isNotEmpty) {
+        print("User found in 'vendors' collection with role: $role");
+        return role.trim().toLowerCase();
+      }
+    }
+
+    // Check the 'users' collection.
+    DocumentSnapshot userDoc =
+        await _firestore.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      String? role = extractRole(userDoc.data() as Map<String, dynamic>?);
+      if (role != null && role.isNotEmpty) {
+        print("User found in 'users' collection with role: $role");
+        return role.trim().toLowerCase();
+      }
+    }
+
+    // If no document is found, default to 'user'.
+    print("User not found in any collection, defaulting to 'user'");
+    return 'user';
   }
 
   Future<void> signOut() async {
@@ -186,6 +198,6 @@ class AuthController extends GetxController {
     await prefs.remove(ROLE_KEY);
     await prefs.remove(UID_KEY);
     await _auth.signOut();
-    Get.offAll(() => const SplashScreen()); // Navigate to SplashScreen
+    Get.offAll(() => const SplashScreen());
   }
 }

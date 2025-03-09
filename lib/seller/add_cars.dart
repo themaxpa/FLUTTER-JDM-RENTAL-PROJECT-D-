@@ -1,145 +1,131 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
-
+import 'package:flutter/cupertino.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 
 class AddCars extends StatefulWidget {
   const AddCars({super.key});
 
   @override
-  State<AddCars> createState() => _AddProductPageState();
+  State<AddCars> createState() => _AddCarsState();
 }
 
-class _AddProductPageState extends State<AddCars> {
-  int _currentStep = 0;
-  File? _image;
+class _AddCarsState extends State<AddCars> {
   final ImagePicker _picker = ImagePicker();
+  final _formKey = GlobalKey<FormState>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final Map<String, TextEditingController> _controllers = {};
+  File? _frontImage;
+  File? _backImage;
+  File? _sideImage;
 
-  Future<void> _pickImage() async {
+  @override
+  void initState() {
+    super.initState();
+    _initializeControllers();
+  }
+
+  void _initializeControllers() {
+    for (var field in [
+      "Model Name ",
+      "Car Brand ",
+      "12 Month Price ",
+      "6 Month Price ",
+      "1 Month Price ",
+      "Color ",
+      "Gearbox ",
+      "Seats ",
+      "Motor ",
+      "Speed (0-100) ",
+      "Location "
+    ]) {
+      _controllers[field] = TextEditingController();
+    }
+  }
+
+  void _resetForm() {
+    setState(() {
+      for (var controller in _controllers.values) {
+        controller.clear();
+      }
+      _frontImage = null;
+      _backImage = null;
+      _sideImage = null;
+    });
+  }
+
+  Future<void> _pickImage(Function(File) setImage) async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        setImage(File(pickedFile.path));
       });
+    }
+  }
+
+  Future<void> _uploadCarDetails() async {
+    try {
+      // Upload the car details to Firestore under the "vendors" collection.
+      // In a real app you would replace 'vendorID' with the logged-in vendor's UID.
+      await _firestore
+          .collection('vendors')
+          .doc('vendorID')
+          .collection('CarDetails')
+          .add({
+        for (var entry in _controllers.entries) entry.key: entry.value.text,
+        "frontImage": _frontImage?.path ?? "",
+        "backImage": _backImage?.path ?? "",
+        "sideImage": _sideImage?.path ?? "",
+      });
+      _resetForm();
+      print("Car details uploaded successfully");
+    } catch (e) {
+      print("Error uploading car details: $e");
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.white,
-      body: Center(
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.white,
+      child: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Container(
-              width: 400,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(4, (index) {
-                      return _buildStepIndicator(
-                          index, index == 0 ? "01" : "0\${index + 1}");
-                    }),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text("Name *",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    decoration: _inputDecoration(
-                        "Give your product a short and clear name."),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text("Description",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 6),
-                  TextField(
-                    maxLines: 3,
-                    decoration: _inputDecoration(
-                        "Give your product a short and clear description."),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: _pickImage,
-                    child: Container(
-                      width: double.infinity,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade300),
-                        borderRadius: BorderRadius.circular(8),
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ..._controllers.entries
+                    .map((entry) => _buildTextField(entry.key, entry.value)),
+                const SizedBox(height: 16),
+                _buildImagePicker(
+                    "Car Front View", _frontImage, (img) => _frontImage = img),
+                _buildImagePicker(
+                    "Car Back View", _backImage, (img) => _backImage = img),
+                _buildImagePicker(
+                    "Car Side View", _sideImage, (img) => _sideImage = img),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CupertinoButton(
+                        color: CupertinoColors.systemGrey5,
+                        onPressed: _resetForm,
+                        child: const Text("Reset",
+                            style: TextStyle(color: CupertinoColors.black)),
                       ),
-                      child: _image == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.upload,
-                                    size: 40, color: Colors.grey),
-                                TextButton(
-                                  onPressed: _pickImage,
-                                  child: const Text("Click to browse",
-                                      style: TextStyle(color: Colors.blue)),
-                                ),
-                              ],
-                            )
-                          : Image.file(_image!, fit: BoxFit.cover),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Add up to 10 images to your product. Used to represent your product during checkout, in email, social sharing, and more.",
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 24),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: BorderSide(color: Colors.grey.shade400),
-                            ),
-                            onPressed: () {},
-                            child: const Text("Save as draft",
-                                style: TextStyle(color: Colors.black)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            onPressed: () {},
-                            child: const Text("Next step",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: CupertinoButton.filled(
+                        onPressed: _uploadCarDetails,
+                        child: const Text("Next Step"),
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -147,40 +133,70 @@ class _AddProductPageState extends State<AddCars> {
     );
   }
 
-  Widget _buildStepIndicator(int index, String step) {
-    bool isActive = index == _currentStep;
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: isActive ? Colors.blue : Colors.grey.shade300,
-          child: Text(step,
-              style: TextStyle(color: isActive ? Colors.white : Colors.black)),
-        ),
-        const SizedBox(height: 4),
-        Text(["General", "Pricing", "Files", "Settings"][index],
-            style: TextStyle(
-                fontSize: 12, color: isActive ? Colors.black : Colors.grey)),
-      ],
+  Widget _buildTextField(String label, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 6),
+          CupertinoTextField(
+            controller: controller,
+            placeholder: "Enter $label",
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey6,
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  InputDecoration _inputDecoration(String hintText) {
-    return InputDecoration(
-      hintText: hintText,
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: Colors.grey.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: Colors.blue),
+  Widget _buildImagePicker(String label, File? image, Function(File) setImage) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style:
+                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 6),
+          GestureDetector(
+            onTap: () => _pickImage(setImage),
+            child: Container(
+              width: double.infinity,
+              height: 120,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: image == null
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(CupertinoIcons.cloud_upload,
+                            size: 40, color: CupertinoColors.systemGrey),
+                        CupertinoButton(
+                          onPressed: () => _pickImage(setImage),
+                          child: const Text("Click to browse",
+                              style:
+                                  TextStyle(color: CupertinoColors.activeBlue)),
+                        ),
+                      ],
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(image, fit: BoxFit.cover),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

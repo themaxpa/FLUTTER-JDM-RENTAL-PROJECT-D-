@@ -212,8 +212,8 @@ class _SignupScreenState extends State<SignupScreen> {
       child: CupertinoPicker(
         itemExtent: 32.0,
         onSelectedItemChanged: (int index) =>
-            setState(() => _selectedRole = ['seller', 'user'][index]),
-        children: ['seller', 'user'].map((role) => Text(role)).toList(),
+            setState(() => _selectedRole = ['vendor', 'user'][index]),
+        children: ['vendor', 'user'].map((role) => Text(role)).toList(),
       ),
     );
   }

@@ -40,13 +40,14 @@ class _SellerProfileState extends State<SellerProfile> {
 
     if (_user != null) {
       try {
+        // Update collection reference from 'users' to 'vendors'
         DocumentSnapshot snapshot =
-            await _firestore.collection('users').doc(_user!.uid).get();
+            await _firestore.collection('vendors').doc(_user!.uid).get();
         if (snapshot.exists && snapshot.data() != null) {
           setState(() => _userData = snapshot.data() as Map<String, dynamic>);
         }
       } catch (error) {
-        print("Error fetching user data: $error");
+        print("Error fetching vendor data: $error");
       }
     }
     setState(() => _isLoading = false);
@@ -96,8 +97,9 @@ class _SellerProfileState extends State<SellerProfile> {
             resourceType: CloudinaryResourceType.Image),
       );
 
+      // Update the vendor document instead of the user document
       await _firestore
-          .collection('users')
+          .collection('vendors')
           .doc(_user!.uid)
           .update({'profileImage': response.secureUrl});
       await _loadUserData();
