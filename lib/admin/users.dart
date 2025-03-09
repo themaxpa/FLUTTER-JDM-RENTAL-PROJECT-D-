@@ -1,44 +1,65 @@
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-//
 class UsersCardScreen extends StatefulWidget {
   @override
   _UsersCardScreenState createState() => _UsersCardScreenState();
 }
 
 class _UsersCardScreenState extends State<UsersCardScreen> {
-  bool isAdminUser = false;
   bool isLoading = true;
   String selectedFilter = 'all';
   Map<String, bool> expandedCards = {};
+  List<DocumentSnapshot> allUsers = [];
+  List<DocumentSnapshot> displayedUsers = [];
 
   @override
   void initState() {
     super.initState();
-    checkAdmin();
+    fetchUsers();
   }
 
-  void checkAdmin() async {
-    bool admin = await isAdmin();
+  Future<void> fetchUsers() async {
+    try {
+      QuerySnapshot usersSnapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+      QuerySnapshot vendorsSnapshot =
+          await FirebaseFirestore.instance.collection('vendors').get();
+
+      List<DocumentSnapshot> combinedUsers = [
+        ...usersSnapshot.docs,
+        ...vendorsSnapshot.docs
+      ];
+
+      setState(() {
+        allUsers = combinedUsers;
+        displayedUsers = combinedUsers;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching users: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void filterUsers(String filter) {
     setState(() {
-      isAdminUser = admin;
-      isLoading = false;
+      selectedFilter = filter;
+      if (filter == 'all') {
+        displayedUsers = allUsers;
+      } else if (filter == 'users') {
+        displayedUsers = allUsers
+            .where((user) => user.reference.parent.id == 'users')
+            .toList();
+      } else if (filter == 'vendors') {
+        displayedUsers = allUsers
+            .where((user) => user.reference.parent.id == 'vendors')
+            .toList();
+      }
     });
-  }
-
-  Future<bool> isAdmin() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return false;
-
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-
-    return userDoc.exists && userDoc['role'] == 'admin';
   }
 
   void toggleCardExpansion(String uid) {
@@ -47,156 +68,246 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
     });
   }
 
+  Future<void> removeUser(String uid, String collection) async {
+    await FirebaseFirestore.instance.collection(collection).doc(uid).delete();
+    setState(() {
+      allUsers.removeWhere((user) => user.id == uid);
+      displayedUsers.removeWhere((user) => user.id == uid);
+    });
+  }
+
+  void confirmDeleteUser(String uid, String collection) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: Text("Delete User"),
+        content: Text("Are you sure you want to remove this user?"),
+        actions: [
+          CupertinoDialogAction(
+            child: Text("Cancel"),
+            onPressed: () => Navigator.pop(context),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: Text("Remove"),
+            onPressed: () {
+              removeUser(uid, collection);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final double screenWidth = MediaQuery.of(context).size.width;
-    final double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+    double avatarSize = screenWidth * 0.15;
+    double padding = screenWidth * 0.05;
 
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(middle: Text('Users List')),
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: CupertinoNavigationBar(
+        middle: Text('LoginInfo'),
+        backgroundColor: CupertinoColors.systemBackground,
+      ),
       child: SafeArea(
         child: Column(
           children: [
+            Material(
+              color: CupertinoColors.systemGroupedBackground,
+              child: Padding(
+                padding: EdgeInsets.all(padding),
+                child: CupertinoSlidingSegmentedControl<String>(
+                  groupValue: selectedFilter,
+                  onValueChanged: (String? value) {
+                    if (value != null) filterUsers(value);
+                  },
+                  backgroundColor: CupertinoColors.systemGrey5,
+                  // Background of the control
+                  thumbColor: CupertinoColors.white,
+                  // Thumb (selected segment) color
+                  children: {
+                    'all': Text(
+                      'All',
+                      style: TextStyle(
+                          color: CupertinoColors.black), // Text color only
+                    ),
+                    'users': Text(
+                      'Users',
+                      style: TextStyle(color: CupertinoColors.black),
+                    ),
+                    'vendors': Text(
+                      'Vendors',
+                      style: TextStyle(color: CupertinoColors.black),
+                    ),
+                  },
+                ),
+              ),
+            ),
             Expanded(
               child: isLoading
                   ? Center(child: CupertinoActivityIndicator())
-                  : StreamBuilder(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .snapshots(),
-                      builder:
-                          (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CupertinoActivityIndicator());
-                        }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return Center(child: Text('No users found'));
-                        }
-
-                        var users = snapshot.data!.docs.where((user) {
-                          String role = user['role'] ?? 'user';
-                          return role != 'admin' &&
-                              (selectedFilter == 'all' ||
-                                  (selectedFilter == 'user' &&
-                                      role == 'user') ||
-                                  (selectedFilter == 'seller' &&
-                                      role == 'seller'));
-                        }).toList();
-
-                        if (users.isEmpty) {
-                          return Center(
-                              child: Text('No users found in this category'));
-                        }
-
-                        return CupertinoScrollbar(
+                  : displayedUsers.isEmpty
+                      ? Center(child: Text('No users found'))
+                      : CupertinoScrollbar(
                           child: ListView.builder(
-                            itemCount: users.length,
+                            itemCount: displayedUsers.length,
                             itemBuilder: (context, index) {
-                              var user = users[index];
+                              var user = displayedUsers[index];
                               String uid = user.id;
                               String name = user['name'] ?? 'N/A';
                               String email = user['email'] ?? 'N/A';
-                              String role = user['role'] ?? 'user';
-                              String phone = user['phone'] ?? 'N/A';
-                              String location = user['location'] ?? 'N/A';
                               String? profileImage = user['profileImage'];
                               bool isExpanded = expandedCards[uid] ?? false;
+                              String collection = user.reference.parent.id;
 
                               return GestureDetector(
                                 onTap: () => toggleCardExpansion(uid),
                                 child: Container(
                                   margin: EdgeInsets.symmetric(
-                                      horizontal: screenWidth * 0.04,
-                                      vertical: screenHeight * 0.01),
-                                  padding: EdgeInsets.all(screenWidth * 0.03),
+                                      horizontal: padding, vertical: 8),
+                                  padding: EdgeInsets.all(padding),
                                   decoration: BoxDecoration(
-                                    color: CupertinoColors.systemGrey5,
-                                    borderRadius: BorderRadius.circular(
-                                        screenWidth * 0.03),
+                                    color: CupertinoColors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: CupertinoColors.systemGrey2,
+                                        blurRadius: 5,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
                                   ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
                                         children: [
-                                          CircleAvatar(
-                                            radius: screenWidth * 0.07,
-                                            backgroundColor:
-                                                CupertinoColors.systemGrey4,
-                                            backgroundImage:
-                                                profileImage != null
-                                                    ? NetworkImage(profileImage)
-                                                    : null,
-                                            child: profileImage == null
-                                                ? Material(
-                                                    color: CupertinoColors
-                                                        .systemGrey5,
-                                                    child: Text(
-                                                      name[0].toUpperCase(),
-                                                      style: TextStyle(
-                                                          fontSize:
-                                                              screenWidth *
-                                                                  0.06,
+                                          ClipOval(
+                                            child: profileImage != null
+                                                ? Image.network(
+                                                    profileImage,
+                                                    width: avatarSize,
+                                                    height: avatarSize,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : Container(
+                                                    width: avatarSize,
+                                                    height: avatarSize,
+                                                    decoration: BoxDecoration(
+                                                      color: CupertinoColors
+                                                          .systemGrey4,
+                                                      shape: BoxShape.circle,
+                                                    ),
+                                                    alignment: Alignment.center,
+                                                    child: Material(
+                                                      color: CupertinoColors
+                                                          .transparent,
+                                                      child: Text(
+                                                        name.isNotEmpty
+                                                            ? name[0]
+                                                                .toUpperCase()
+                                                            : '?',
+                                                        style: TextStyle(
+                                                          fontSize: 24,
                                                           fontWeight:
                                                               FontWeight.bold,
                                                           color: CupertinoColors
-                                                              .white),
+                                                              .black,
+                                                        ),
+                                                      ),
                                                     ),
-                                                  )
-                                                : null,
+                                                  ),
                                           ),
-                                          SizedBox(width: screenWidth * 0.03),
-                                          Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Material(
-                                                color:
-                                                    CupertinoColors.systemGrey5,
-                                                child: Text(name,
+                                          SizedBox(width: padding),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Material(
+                                                  color: CupertinoColors
+                                                      .transparent,
+                                                  child: Text(
+                                                    name,
                                                     style: TextStyle(
-                                                        fontSize:
-                                                            screenWidth * 0.045,
-                                                        fontWeight:
-                                                            FontWeight.bold)),
-                                              ),
-                                              Material(
-                                                color:
-                                                    CupertinoColors.systemGrey5,
-                                                child: Text(email,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4),
+                                                Material(
+                                                  color: CupertinoColors
+                                                      .transparent,
+                                                  child: Text(
+                                                    email,
                                                     style: TextStyle(
-                                                        fontSize: screenWidth *
-                                                            0.035)),
-                                              ),
-                                            ],
+                                                      fontSize: 14,
+                                                      color: CupertinoColors
+                                                          .systemGrey,
+                                                    ),
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 1,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          Spacer(),
+                                          if (isExpanded)
+                                            CupertinoButton(
+                                              padding: EdgeInsets.zero,
+                                              child: Icon(
+                                                CupertinoIcons.trash,
+                                                color:
+                                                    CupertinoColors.systemRed,
+                                              ),
+                                              onPressed: () =>
+                                                  confirmDeleteUser(
+                                                      uid, collection),
+                                            ),
                                           Icon(
                                             isExpanded
                                                 ? CupertinoIcons.chevron_up
                                                 : CupertinoIcons.chevron_down,
                                             color: CupertinoColors.systemGrey,
-                                            size: screenWidth * 0.05,
                                           ),
                                         ],
                                       ),
                                       if (isExpanded) ...[
-                                        SizedBox(height: screenHeight * 0.01),
+                                        SizedBox(height: 10),
+                                        Divider(
+                                            color: CupertinoColors.systemGrey3),
+                                        SizedBox(height: 5),
                                         Material(
-                                          color: CupertinoColors.systemGrey5,
-                                          child: Text("Phone: $phone",
-                                              style: TextStyle(
-                                                  fontSize:
-                                                      screenWidth * 0.04)),
+                                          color: CupertinoColors.transparent,
+                                          child: Text(
+                                            "Phone: ${user['phone'] ?? 'N/A'}",
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color:
+                                                    CupertinoColors.activeBlue),
+                                          ),
                                         ),
+                                        SizedBox(height: 5),
                                         Material(
-                                          color: CupertinoColors.systemGrey5,
-                                          child: Text("Location: $location",
-                                              style: TextStyle(
-                                                  fontSize:
-                                                      screenWidth * 0.04)),
+                                          color: CupertinoColors.transparent,
+                                          child: Text(
+                                            "Location: ${user['location'] ?? 'N/A'}",
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                color:
+                                                    CupertinoColors.activeBlue),
+                                          ),
                                         ),
                                       ],
                                     ],
@@ -205,48 +316,7 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                               );
                             },
                           ),
-                        );
-                      },
-                    ),
-            ),
-            Padding(
-              padding: EdgeInsets.only(bottom: screenHeight * 0.02),
-              child: CupertinoSlidingSegmentedControl<String>(
-                groupValue: selectedFilter,
-                onValueChanged: (String? value) {
-                  if (value != null) {
-                    setState(() {
-                      selectedFilter = value;
-                    });
-                  }
-                },
-                children: {
-                  'all': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Text('All',
-                          style: TextStyle(color: CupertinoColors.black)),
-                    ),
-                  ),
-                  'user': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Text('Users',
-                          style: TextStyle(color: CupertinoColors.black)),
-                    ),
-                  ),
-                  'seller': Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 10),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Text('Sellers',
-                          style: TextStyle(color: CupertinoColors.black)),
-                    ),
-                  ),
-                },
-              ),
+                        ),
             ),
           ],
         ),

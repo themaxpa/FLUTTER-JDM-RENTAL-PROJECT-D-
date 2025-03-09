@@ -31,19 +31,36 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     _loadUserData();
   }
 
+  Future<void> updateAdminProfile(String name, String email) async {
+    if (_user == null) return;
+
+    try {
+      await _firestore.collection('admin').doc(_user!.uid).update({
+        'name': name,
+        'email': email,
+      });
+      await _loadUserData();
+      Get.back(); // Go back after updating
+    } catch (e) {
+      print("Profile update failed: $e");
+    }
+  }
+
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
     _user = _auth.currentUser;
 
     if (_user != null) {
       try {
-        DocumentSnapshot snapshot =
-            await _firestore.collection('users').doc(_user!.uid).get();
+        DocumentSnapshot snapshot = await _firestore
+            .collection('admin')
+            .doc(_user!.uid)
+            .get(); // Change to 'admin' collection
         if (snapshot.exists && snapshot.data() != null) {
           setState(() => _userData = snapshot.data() as Map<String, dynamic>);
         }
       } catch (error) {
-        print("Error fetching user data: $error");
+        print("Error fetching admin data: $error");
       }
     }
     setState(() => _isLoading = false);
@@ -94,7 +111,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       );
 
       await _firestore
-          .collection('users')
+          .collection('admin') // Change from 'users' to 'admin'
           .doc(_user!.uid)
           .update({'profileImage': response.secureUrl});
       await _loadUserData();
