@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -27,17 +28,44 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  void _recoverPassword() {
-    // Add password recovery logic here
+  Future<void> _recoverPassword() async {
+    final String email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      _showMessage("Please enter your email.");
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      _showMessage("Password reset link sent to $email.");
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = "An error occurred.";
+      if (e.code == 'user-not-found') {
+        errorMessage = "No user found with this email.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "Invalid email format.";
+      }
+      _showMessage(errorMessage);
+    } catch (e) {
+      _showMessage("Something went wrong. Try again later.");
+    }
+  }
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password recovery link sent!')),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.grey[800],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,

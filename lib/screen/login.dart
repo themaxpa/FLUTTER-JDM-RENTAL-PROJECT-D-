@@ -157,12 +157,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => Get.to(() => const ForgotPasswordPage()),
-                  child: Text(
-                    "Forgot Password?",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: CupertinoColors.activeBlue,
-                        fontSize: 13),
+                  child: Material(
+                    color: Colors.grey[200],
+                    child: Text(
+                      "Forgot Password?",
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: CupertinoColors.activeBlue,
+                          fontSize: 13),
+                    ),
                   ),
                 ),
               ),
@@ -180,16 +183,22 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("Don't have an account?",
-                      style: TextStyle(fontSize: 12)),
+                  Material(
+                    color: Colors.grey[200],
+                    child: const Text("Don't have an account?",
+                        style: TextStyle(fontSize: 12)),
+                  ),
                   GestureDetector(
                     onTap: () => Get.off(() => const SignupScreen()),
-                    child: Text(
-                      " Signup here",
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: CupertinoColors.activeBlue,
-                          fontWeight: FontWeight.bold),
+                    child: Material(
+                      color: Colors.grey[200],
+                      child: Text(
+                        " Signup here",
+                        style: TextStyle(
+                            fontSize: 13,
+                            color: CupertinoColors.activeBlue,
+                            fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
