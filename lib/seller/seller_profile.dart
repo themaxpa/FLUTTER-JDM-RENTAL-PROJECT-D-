@@ -3,15 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app/seller/seller_edit_profile.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
-import 'package:flutter_app/screen/screen_splash.dart';
-import 'package:flutter_app/user/update_user_profile.dart';
-import 'package:flutter_app/user/user_profile_widget_menu.dart';
 
+import 'package:flutter_app/screen/screen_splash.dart';
 import '../user/my_documents.dart';
+import 'package:flutter_app/seller/seller_edit_profile.dart';
 
 class SellerProfile extends StatefulWidget {
   const SellerProfile({Key? key}) : super(key: key);

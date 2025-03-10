@@ -189,39 +189,29 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                             CrossAxisAlignment.center,
                                         children: [
                                           ClipOval(
-                                            child: profileImage != null
+                                            child: profileImage != null &&
+                                                    profileImage.isNotEmpty
                                                 ? Image.network(
                                                     profileImage,
                                                     width: avatarSize,
                                                     height: avatarSize,
                                                     fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Image.asset(
+                                                        'assets/images/img.jpg',
+                                                        // Default image
+                                                        width: avatarSize,
+                                                        height: avatarSize,
+                                                        fit: BoxFit.cover,
+                                                      );
+                                                    },
                                                   )
-                                                : Container(
+                                                : Image.asset(
+                                                    'assets/images/img.jpg', // Default image
                                                     width: avatarSize,
                                                     height: avatarSize,
-                                                    decoration: BoxDecoration(
-                                                      color: CupertinoColors
-                                                          .systemGrey4,
-                                                      shape: BoxShape.circle,
-                                                    ),
-                                                    alignment: Alignment.center,
-                                                    child: Material(
-                                                      color: CupertinoColors
-                                                          .transparent,
-                                                      child: Text(
-                                                        name.isNotEmpty
-                                                            ? name[0]
-                                                                .toUpperCase()
-                                                            : '?',
-                                                        style: TextStyle(
-                                                          fontSize: 24,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          color: CupertinoColors
-                                                              .black,
-                                                        ),
-                                                      ),
-                                                    ),
+                                                    fit: BoxFit.cover,
                                                   ),
                                           ),
                                           SizedBox(width: padding),

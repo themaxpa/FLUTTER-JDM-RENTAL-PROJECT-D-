@@ -1,107 +1,122 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateAdScreen extends StatelessWidget {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          // ✅ Fix: Allows scrolling to prevent overflow
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Stack(
-                  children: [
-                    Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image: AssetImage("assets/images/ph2.jpg"),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 10,
-                      right: 10,
-                      child: FloatingActionButton(
-                        onPressed: () {},
-                        mini: true,
-                        backgroundColor: Colors.white,
-                        child: Icon(Icons.camera_alt, color: Colors.black),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                _buildInputField("BMW 116", "116d Sport Line"),
-                _buildInputField("Final Price", "116d Sport Line"),
-                _buildInputField("Power", "85 KW (116)"),
-                _buildInputField("Mileage", "300.000 Km"),
-                _buildInputField("First Registration", "10/01/2025"),
-                SizedBox(height: 10),
-                ExpansionTile(
-                  collapsedBackgroundColor: Colors.grey[900],
-                  title: Text("Vehicle Data",
-                      style: TextStyle(color: Colors.white)),
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text("Additional vehicle details go here...",
-                          style: TextStyle(color: Colors.grey)),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20),
-                // ✅ Fix: Add extra space to avoid bottom overflow
-              ],
-            ),
-          ),
-        ),
+      appBar: AppBar(title: Text("Car Listings")),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collectionGroup('CarDetails').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            print("Firestore Error: ${snapshot.error}");
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No car listings available."));
+          }
+
+          var carDocs = snapshot.data!.docs;
+
+          return ListView.separated(
+            padding: EdgeInsets.all(16),
+            itemCount: carDocs.length,
+            separatorBuilder: (_, __) => SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              var carData = carDocs[index].data() as Map<String, dynamic>;
+              return _buildCarCard(carData);
+            },
+          );
+        },
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.yellow,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            minimumSize: Size(double.infinity, 50),
-          ),
-          onPressed: () {},
-          child: Text("Publish ad",
-              style: TextStyle(color: Colors.black, fontSize: 18)),
+    );
+  }
+
+  Widget _buildCarCard(Map<String, dynamic> carData) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCarImages(carData),
+            SizedBox(height: 10),
+            _buildCarDetails(carData),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildInputField(String label, String value) {
+  Widget _buildCarImages(Map<String, dynamic> carData) {
+    List<String?> images = [
+      carData['frontImage'],
+      carData['sideImage'],
+      carData['backImage']
+    ];
+
+    if (images.every((img) => img == null)) return SizedBox(); // No images case
+
+    return Row(
+      children: images.map((imageUrl) => _buildCarImage(imageUrl)).toList(),
+    );
+  }
+
+  Widget _buildCarDetails(Map<String, dynamic> carData) {
+    List<Map<String, dynamic>> details = [
+      {"label": "Model Name", "value": carData["Model Name"]},
+      {"label": "Car Brand", "value": carData["Car Brand"]},
+      {"label": "Color", "value": carData["Color"]},
+      {"label": "Seats", "value": carData["Seats"]},
+      {"label": "Gearbox", "value": carData["Gearbox"]},
+      {"label": "Motor", "value": carData["Motor"]},
+      {"label": "Speed (0-100)", "value": carData["Speed (0-100)"]},
+      {"label": "Location", "value": carData["Location"]},
+      {"label": "1 Month Price", "value": carData["1 Month Price"]},
+      {"label": "6 Month Price", "value": carData["6 Month Price"]},
+      {"label": "12 Month Price", "value": carData["12 Month Price"]},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: details
+          .map((detail) => _buildCarDetail(detail["label"], detail["value"]))
+          .toList(),
+    );
+  }
+
+  Widget _buildCarDetail(String label, dynamic value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
         children: [
-          Text(label, style: TextStyle(color: Colors.grey, fontSize: 14)),
-          SizedBox(height: 5),
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.grey[900],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(value,
-                style: TextStyle(color: Colors.white, fontSize: 16)),
-          ),
+          Text("$label: ", style: TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value?.toString() ?? "N/A")),
         ],
       ),
+    );
+  }
+
+  Widget _buildCarImage(String? imageUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: imageUrl != null
+          ? Image.network(imageUrl, width: 100, height: 70, fit: BoxFit.cover)
+          : Container(
+              width: 100,
+              height: 70,
+              color: Colors.grey[300],
+              child: Icon(Icons.image, color: Colors.grey[600]),
+            ),
     );
   }
 }
