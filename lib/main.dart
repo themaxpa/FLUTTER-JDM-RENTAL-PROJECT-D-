@@ -1,13 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/vendor/vendor_home.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:flutter_app/seller/seller_home.dart';
 import 'package:flutter_app/user/showroom.dart';
 import 'admin/home.dart';
 import 'package:flutter_app/screen/screen_splash.dart';

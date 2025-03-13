@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/seller/data.dart';
+import '../vendor/data.dart';
 
 Widget buildDealer(Dealer dealer, int index) {
   return Container(

@@ -1,437 +1,257 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app/constants.dart';
-import 'package:flutter_app/seller/data.dart';
 
-class BookCar extends StatefulWidget {
-  final Car car;
+import '../screen/payment_screen.dart';
+import 'more_car_details.dart';
 
-  BookCar({required this.car});
+class CarBookingScreen extends StatefulWidget {
+  final Map<String, dynamic> car;
+
+  const CarBookingScreen({Key? key, required this.car}) : super(key: key);
 
   @override
-  _BookCarState createState() => _BookCarState();
+  _CarBookingScreenState createState() => _CarBookingScreenState();
 }
 
-class _BookCarState extends State<BookCar> {
-  int _currentImage = 0;
-
-  List<Widget> buildPageIndicator() {
-    List<Widget> list = [];
-    for (var i = 0; i < widget.car.images.length; i++) {
-      list.add(buildIndicator(i == _currentImage));
-    }
-    return list;
-  }
-
-  Widget buildIndicator(bool isActive) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 150),
-      margin: EdgeInsets.symmetric(horizontal: 6),
-      height: 16,
-      width: isActive ? 20 : 8,
-      decoration: BoxDecoration(
-        color: isActive ? Colors.black : Colors.grey[400],
-        borderRadius: BorderRadius.all(
-          Radius.circular(12),
-        ),
-      ),
-    );
-  }
+class _CarBookingScreenState extends State<CarBookingScreen> {
+  String selectedPlan = '1 Month';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Container(
-          width: double.infinity,
+    try {
+      final oneMonthPrice =
+          num.tryParse(widget.car['1MonthPrice'].toString()) ?? 0;
+      final sixMonthPrice =
+          num.tryParse(widget.car['6MonthPrice'].toString()) ?? 0;
+      final twelveMonthPrice =
+          num.tryParse(widget.car['12MonthPrice'].toString()) ?? 0;
+
+      print(widget.car);
+
+      num selectedPrice = selectedPlan == '1 Month'
+          ? oneMonthPrice
+          : selectedPlan == '6 Month'
+              ? sixMonthPrice
+              : twelveMonthPrice;
+
+      String priceSuffix = selectedPlan == '1 Month'
+          ? '/1 month'
+          : selectedPlan == '6 Month'
+              ? '/6 months'
+              : '/12 months';
+
+      if (oneMonthPrice == 0 && sixMonthPrice == 0 && twelveMonthPrice == 0) {
+        return CupertinoAlertDialog(
+          title: Text('No Pricing Available'),
+          content:
+              Text('Car pricing details are missing. Please check back later.'),
+          actions: [
+            CupertinoDialogAction(
+              child: Text('OK'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],
+        );
+      }
+
+      return Scaffold(
+        backgroundColor: CupertinoColors.systemGroupedBackground,
+        body: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.pop(context);
-                              },
-                              child: Container(
-                                  width: 45,
-                                  height: 45,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.all(
-                                      Radius.circular(15),
-                                    ),
-                                    border: Border.all(
-                                      color: Colors.grey.shade300,
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Icon(
-                                    Icons.keyboard_arrow_left,
-                                    color: Colors.black,
-                                    size: 28,
-                                  )),
-                            ),
-                            Row(
-                              children: [
-                                Container(
-                                    width: 45,
-                                    height: 45,
-                                    decoration: BoxDecoration(
-                                      color: kPrimaryColor,
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(15),
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.bookmark_border,
-                                      color: Colors.white,
-                                      size: 22,
-                                    )),
-                                SizedBox(
-                                  width: 16,
-                                ),
-                                Container(
-                                    width: 45,
-                                    height: 45,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.all(
-                                        Radius.circular(15),
-                                      ),
-                                      border: Border.all(
-                                        color: Colors.grey.shade300,
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.share,
-                                      color: Colors.black,
-                                      size: 22,
-                                    )),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        height: 16,
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          widget.car.model,
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          widget.car.brand,
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        height: 8,
-                      ),
-                      Expanded(
-                        child: Container(
-                          child: PageView(
-                            physics: BouncingScrollPhysics(),
-                            onPageChanged: (int page) {
-                              setState(() {
-                                _currentImage = page;
-                              });
-                            },
-                            children: widget.car.images.map((path) {
-                              return Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Hero(
-                                  tag: widget.car.model,
-                                  child: Image.asset(
-                                    path,
-                                    fit: BoxFit.scaleDown,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
-                      widget.car.images.length > 1
-                          ? Container(
-                              margin: EdgeInsets.symmetric(vertical: 16),
-                              height: 30,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: buildPageIndicator(),
-                              ),
-                            )
-                          : Container(),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            buildPricePerPeriod(
-                              "12",
-                              "4.350",
-                              true,
-                            ),
-                            SizedBox(
-                              width: 16,
-                            ),
-                            buildPricePerPeriod(
-                              "6",
-                              "4.800",
-                              false,
-                            ),
-                            SizedBox(
-                              width: 16,
-                            ),
-                            buildPricePerPeriod(
-                              "1",
-                              "5.100",
-                              false,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child:
+                          Text('Close', style: TextStyle(color: Colors.black)),
+                    ),
+                  ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
+              SizedBox(
+                height: 200,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildImage(widget.car['frontImage']),
+                    SizedBox(width: 8),
+                    _buildImage(widget.car['backImage']),
+                    SizedBox(width: 8),
+                    _buildImage(widget.car['sideImage']),
+                  ],
                 ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.only(top: 16, left: 16, right: 16),
-                      child: Text(
-                        "SPECIFICATIONS",
+                    Text(widget.car['Model Name'] ?? 'Unknown Car',
                         style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[400],
+                            fontSize: 24, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, size: 16),
+                        SizedBox(width: 4),
+                        Text(widget.car['Car Brand'] ?? 'Unknown Brand'),
+                        SizedBox(width: 16),
+                        Icon(Icons.info, size: 16),
+                        SizedBox(width: 4),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) =>
+                                    CarDetailsScreen(car: widget.car),
+                              ),
+                            );
+                          },
+                          child: Text('More Info'),
                         ),
-                      ),
+                      ],
                     ),
-                    Container(
-                      height: 150,
-                      padding: EdgeInsets.only(
-                        top: 8,
-                        left: 16,
-                      ),
-                      margin: EdgeInsets.only(bottom: 16),
-                      child: ListView(
-                        physics: BouncingScrollPhysics(),
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          buildSpecificationCar("Color", "White"),
-                          buildSpecificationCar("Gearbox", "Automatic"),
-                          buildSpecificationCar("Seat", "4"),
-                          buildSpecificationCar("Motor", "v10 2.0"),
-                          buildSpecificationCar("Speed (0-100)", "3.2 sec"),
-                          buildSpecificationCar("Top Speed", "121 mph"),
-                        ],
-                      ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildSpec('Color', widget.car['Color']),
+                        _buildSpec('Power', widget.car['power']),
+                        _buildSpec('Seats', widget.car['Seats']),
+                      ],
                     ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildSpec('0-100 km/h', widget.car['Speed (0-100)']),
+                        _buildSpec('Max Speed', widget.car['maxSpeed']),
+                        _buildSpec('Drive', widget.car['drive']),
+                      ],
+                    ),
+                    SizedBox(height: 24),
+                    Text('Plans',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
+              SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                child: Center(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildSelectablePlanCard('1 Month', '\₹$oneMonthPrice'),
+                        SizedBox(width: 16), // Spacing between cards
+                        _buildSelectablePlanCard('6 Month', '\₹$sixMonthPrice'),
+                        SizedBox(width: 16), // Spacing between cards
+                        _buildSelectablePlanCard(
+                            '12 Month', '\₹$twelveMonthPrice'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 24),
             ],
           ),
         ),
-      ),
-      bottomNavigationBar: Container(
-        height: 100,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "12 Month",
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                SizedBox(
-                  height: 4,
-                ),
-                Row(
-                  children: [
-                    Text(
-                      "USD 4,350",
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                      ),
-                    ),
-                    SizedBox(
-                      width: 8,
-                    ),
-                    Text(
-                      "per month",
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            Container(
-              height: 50,
-              decoration: BoxDecoration(
-                color: kPrimaryColor,
-                borderRadius: BorderRadius.all(
-                  Radius.circular(15),
-                ),
-              ),
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10),
-                  child: Text(
-                    "Book this car",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+        bottomNavigationBar: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PaymentScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black,
+              padding: EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildPricePerPeriod(String months, String price, bool selected) {
-    return Expanded(
-      child: Container(
-        height: 120,
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: selected ? kPrimaryColor : Colors.white,
-          borderRadius: BorderRadius.all(
-            Radius.circular(15),
-          ),
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: selected ? 0 : 1,
+            child: Text('Book Now \$$selectedPrice$priceSuffix',
+                style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              months + " Month",
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.black,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Expanded(
-              child: Container(),
-            ),
-            Text(
-              price,
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.black,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              "USD",
-              style: TextStyle(
-                color: selected ? Colors.white : Colors.black,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildSpecificationCar(String title, String data) {
-    return Container(
-      width: 100,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(
-          Radius.circular(15),
-        ),
-      ),
-      padding: EdgeInsets.symmetric(
-        vertical: 8,
-        horizontal: 16,
-      ),
-      margin: EdgeInsets.only(right: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 14,
-            ),
-          ),
-          SizedBox(
-            height: 8,
-          ),
-          Text(
-            data,
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+      );
+    } catch (e) {
+      return CupertinoAlertDialog(
+        title: Text('Error'),
+        content: Text('Failed to load car details. Please try again later.'),
+        actions: [
+          CupertinoDialogAction(
+            child: Text('OK'),
+            onPressed: () => Navigator.pop(context),
           ),
         ],
+      );
+    }
+  }
+
+  Widget _buildImage(String? imageUrl) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Image.network(
+        imageUrl ?? '',
+        width: 300,
+        height: 200,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+
+  Widget _buildSpec(String title, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(color: Colors.grey)),
+        SizedBox(height: 4),
+        Text(value, style: TextStyle(fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildSelectablePlanCard(String title, String price,
+      {num discount = 0}) {
+    bool isSelected = selectedPlan == title;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedPlan = title;
+        });
+      },
+      child: Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: isSelected ? Colors.black : Colors.grey),
+          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? Colors.black : Colors.white,
+        ),
+        child: Column(
+          children: [
+            Text(title,
+                style:
+                    TextStyle(color: isSelected ? Colors.white : Colors.black)),
+            SizedBox(height: 4),
+            Text(price,
+                style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }

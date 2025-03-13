@@ -1,10 +1,11 @@
 import 'dart:ui'; // For Acrylic Blur
 import 'package:flutter/material.dart';
-import 'package:flutter_app/seller/seller_bottom_navigation.dart';
-import 'package:flutter_app/seller/add_cars.dart';
-import 'package:flutter_app/seller/seller_profile.dart';
+import 'package:flutter_app/vendor/seller_bottom_navigation.dart';
+
+import 'package:flutter_app/vendor/vendor_profile.dart';
 
 import 'add.dart';
+import 'add_cars.dart';
 
 class SellerHome extends StatefulWidget {
   const SellerHome({Key? key}) : super(key: key);

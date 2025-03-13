@@ -14,7 +14,6 @@ class AuthService {
     required String role,
   }) async {
     try {
-      // Create user with email and password
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -32,7 +31,6 @@ class AuthService {
       WriteBatch batch = _firestore.batch();
       DocumentReference userRef = _firestore.collection(collection).doc(uid);
 
-      // Store user data in Firestore
       batch.set(userRef, {
         'uid': uid,
         'name': name,
@@ -44,7 +42,6 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Create role-specific subcollections
       if (roleLower == 'vendor') {
         _addVendorSubcollections(uid, batch);
       } else if (roleLower == 'user') {
@@ -52,7 +49,7 @@ class AuthService {
       }
 
       await batch.commit();
-      return null; // Successful signup
+      return null;
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);
     } catch (e) {
@@ -104,7 +101,6 @@ class AuthService {
 
     if (data != null) {
       Map<String, dynamic> updateData = {};
-
       if (data['phone'] == null || data['phone'].toString().isEmpty) {
         updateData['phone'] = '';
       }
@@ -129,10 +125,18 @@ class AuthService {
       for (String collection in collections) {
         DocumentSnapshot doc =
             await _firestore.collection(collection).doc(uid).get();
+
+        debugPrint(
+            "📄 Checking in collection: $collection, Exists: ${doc.exists}");
+
         if (doc.exists) {
           Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
-          if (data != null) {
-            return data['role']?.toString().toLowerCase();
+          debugPrint("📄 Data in $collection: $data");
+
+          if (data != null && data['role'] != null) {
+            String role = data['role'].toString().toLowerCase();
+            debugPrint("✅ Found role: $role in $collection");
+            return role;
           }
         }
       }
@@ -148,41 +152,69 @@ class AuthService {
   // Create User Subcollection
   void _addUserSubcollection(String uid, WriteBatch batch) {
     batch.set(
-        _firestore.collection('users').doc(uid).collection('MyDocuments').doc(),
-        {
-          'title': 'Initial Document',
-          'timestamp': FieldValue.serverTimestamp()
-        });
+      _firestore.collection('users').doc(uid).collection('MyDocuments').doc(),
+      {
+        'title': 'Initial Document',
+        'timestamp': FieldValue.serverTimestamp(),
+      },
+    );
   }
 
   // Create Vendor Subcollections
   void _addVendorSubcollections(String uid, WriteBatch batch) {
     batch.set(
-        _firestore
-            .collection('vendors')
-            .doc(uid)
-            .collection('CarDetails')
-            .doc(),
-        {
-          'carName': 'Sample Car',
-          'brand': 'Default Brand',
-          'price': 0,
-          'year': DateTime.now().year,
-          'createdAt': FieldValue.serverTimestamp()
-        });
+      _firestore.collection('vendors').doc(uid).collection('CarDetails').doc(),
+      {
+        'modelName': '',
+        'carBrand': '',
+        'color': '',
+        'gearbox': '',
+        'power': '',
+        'maxSpeed': '',
+        'drive': '',
+        'location': '',
+        'motor': '',
+        'seats': 4,
+        'speed (0-100)': '',
+        '1MonthPrice': 0,
+        '6MonthPrice': 0,
+        '12MonthPrice': 0,
+        'backImage': '',
+        'frontImage': '',
+        'sideImage': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
 
     batch.set(
-        _firestore
-            .collection('vendors')
-            .doc(uid)
-            .collection('CompanyDetails')
-            .doc(),
-        {
-          'companyName': 'Default Company',
-          'location': 'Not specified',
-          'contact': '',
-          'createdAt': FieldValue.serverTimestamp()
-        });
+      _firestore
+          .collection('vendors')
+          .doc(uid)
+          .collection('CompanyDetails')
+          .doc(),
+      {
+        'companyName': 'Default Company',
+        'companyLogo': '',
+        'companyAbout': '',
+        'location': 'Not specified',
+        'contact': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
+
+    batch.set(
+      _firestore.collection('vendors').doc(uid).collection('Booking').doc(),
+      {
+        'Exp': '',
+        'Cvv': '',
+        'Status': 'pending',
+        'PickupDate': '',
+        'PickupTime': '',
+        'ReturnDate': '',
+        'ReturnTime': '',
+        'createdAt': FieldValue.serverTimestamp(),
+      },
+    );
   }
 
   // Determine Firestore Collection for Role

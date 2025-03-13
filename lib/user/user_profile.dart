@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/user/book_car.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
@@ -127,46 +128,53 @@ class _SellerProfileState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileImage() {
-    return Stack(
-      alignment: Alignment.bottomRight,
-      children: [
-        CircleAvatar(
-          radius: 60,
-          backgroundImage: _userData?['profileImage'] != null
-              ? NetworkImage(_userData!['profileImage'])
-              : const AssetImage('assets/images/img.jpg') as ImageProvider,
-          backgroundColor: Colors.grey.shade200,
-        ),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: _uploadImage,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blue.shade600,
-              border: Border.all(color: Colors.white, width: 2),
+    return Padding(
+      padding: const EdgeInsets.only(top: 150),
+      child: Center(
+        child: Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            CircleAvatar(
+              radius: 60,
+              backgroundImage: _userData?['profileImage'] != null
+                  ? NetworkImage(_userData!['profileImage'])
+                  : const AssetImage('assets/images/img.jpg') as ImageProvider,
+              backgroundColor: Colors.grey.shade200,
             ),
-            padding: const EdgeInsets.all(6),
-            child: const Icon(CupertinoIcons.camera_fill,
-                color: Colors.white, size: 20),
-          ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _uploadImage,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.blue.shade600,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                padding: const EdgeInsets.all(6),
+                child: const Icon(CupertinoIcons.camera_fill,
+                    color: Colors.white, size: 20),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildProfileInfo() {
-    return Column(
-      children: [
-        Text(
-          _userData?['name'] ?? 'N/A',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          _user?.email ?? 'N/A',
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-        ),
-      ],
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            _userData?['name'] ?? 'N/A',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            _user?.email ?? 'N/A',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -206,6 +214,9 @@ class _SellerProfileState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: CupertinoNavigationBar(
+        middle: Text('Profile'),
+      ),
       child: _isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 15))
           : SingleChildScrollView(
@@ -219,9 +230,8 @@ class _SellerProfileState extends State<ProfileScreen> {
                   _buildMenuItem("Edit Profile", CupertinoIcons.pencil,
                       () => Get.to(() => const UpdateProfileScreen())),
                   _buildMenuItem("Settings", CupertinoIcons.gear_alt, () {}),
-                  _buildMenuItem("My Documents", CupertinoIcons.doc_text, () {
-                    Get.to(() => MyDocumentsScreen());
-                  }),
+                  _buildMenuItem("My Documents", CupertinoIcons.doc_text,
+                      () => Get.to(() => MyDocumentsScreen())),
                   _buildMenuItem("Support", CupertinoIcons.person_2_alt, () {}),
                   _buildMenuItem(
                       "Information", CupertinoIcons.info_circle, () {}),

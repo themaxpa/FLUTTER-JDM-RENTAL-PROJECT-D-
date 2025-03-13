@@ -1,11 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../admin/home.dart';
-import '../seller/seller_home.dart';
 import '../user/showroom.dart';
 import '../screen/signup_page.dart';
 import '../services/auth_services.dart';
+import '../vendor/vendor_home.dart';
 import 'forgot_password.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -50,12 +51,33 @@ class _LoginScreenState extends State<LoginScreen> {
         debugPrint("✅ User role retrieved: $role");
         _navigateToHomeScreen(role);
       } else {
-        _showErrorDialog('Error', 'Invalid email or password.');
+        _showErrorDialog('Login Failed', 'Invalid email or password.');
       }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
+      String errorMessage;
+
+      switch (e.code) {
+        case 'user-not-found':
+          errorMessage = 'No user found for that email.';
+          break;
+        case 'wrong-password':
+          errorMessage = 'Incorrect password. Please try again.';
+          break;
+        case 'invalid-email':
+          errorMessage = 'The email address is badly formatted.';
+          break;
+        case 'network-request-failed':
+          errorMessage = 'Network error. Please check your connection.';
+          break;
+        default:
+          errorMessage = 'An unexpected error occurred. Please try again.';
+      }
+
+      _showErrorDialog('Login Error', errorMessage);
     } catch (error) {
       setState(() => _isLoading = false);
-      _showErrorDialog(
-          'Error', 'An unexpected error occurred. Please try again.');
+      _showErrorDialog('Error', 'Something went wrong. Please try again.');
     }
   }
 
