@@ -2,10 +2,10 @@ import 'dart:ui'; // For Acrylic Blur
 import 'package:flutter/material.dart';
 import 'package:flutter_app/vendor/seller_bottom_navigation.dart';
 
-import 'package:flutter_app/vendor/vendor_profile.dart';
+import 'package:flutter_app/vendor/profile/vendor_profile.dart';
 
-import 'add.dart';
-import 'add_cars.dart';
+import 'cars/all_cars.dart';
+import 'cars/add_cars.dart';
 
 class SellerHome extends StatefulWidget {
   const SellerHome({Key? key}) : super(key: key);
@@ -21,7 +21,7 @@ class _SellerHomeState extends State<SellerHome> {
   final List<String> _titles = [
     "Home",
     "Add Cars",
-    "Notification",
+    "Available Cars",
     "Profile"
   ]; // Dynamic Titles
 
@@ -47,7 +47,7 @@ class _SellerHomeState extends State<SellerHome> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: PreferredSize(
-        preferredSize: Size.fromHeight(70),
+        preferredSize: Size.fromHeight(50),
         child: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),

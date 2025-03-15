@@ -53,7 +53,7 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);
     } catch (e) {
-      debugPrint("🔥 Signup Error: $e");
+      debugPrint("\uD83D\uDD25 Signup Error: $e");
       return 'An unexpected error occurred.';
     }
   }
@@ -76,16 +76,14 @@ class AuthService {
       String? role = await _getUserRoleFromFirestore(uid);
       if (role == null) return 'User data not found.';
 
-      if (role == 'user' || role == 'vendor') {
-        await _ensurePhoneAndLocation(uid, role);
-      }
+      await _ensurePhoneAndLocation(uid, role);
 
       debugPrint("✅ Login Successful: Role - $role");
       return role;
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);
     } catch (e) {
-      debugPrint("🔥 Login Error: $e");
+      debugPrint("\uD83D\uDD25 Login Error: $e");
       return 'An unexpected error occurred.';
     }
   }
@@ -111,7 +109,7 @@ class AuthService {
 
       if (updateData.isNotEmpty) {
         await userRef.update(updateData);
-        debugPrint("📌 Updated phone & location for $role: $uid");
+        debugPrint("\uD83D\uDCCC Updated phone & location for $role: $uid");
       }
     }
   }
@@ -119,7 +117,7 @@ class AuthService {
   // Fetch User Role from Firestore
   Future<String?> _getUserRoleFromFirestore(String uid) async {
     try {
-      debugPrint("🔍 Checking role for UID: $uid");
+      debugPrint("\uD83D\uDD0D Checking role for UID: $uid");
 
       List<String> collections = ['admin', 'vendors', 'users'];
       for (String collection in collections) {
@@ -127,12 +125,10 @@ class AuthService {
             await _firestore.collection(collection).doc(uid).get();
 
         debugPrint(
-            "📄 Checking in collection: $collection, Exists: ${doc.exists}");
+            "\uD83D\uDCC4 Checking in collection: $collection, Exists: ${doc.exists}");
 
         if (doc.exists) {
           Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
-          debugPrint("📄 Data in $collection: $data");
-
           if (data != null && data['role'] != null) {
             String role = data['role'].toString().toLowerCase();
             debugPrint("✅ Found role: $role in $collection");
@@ -144,7 +140,7 @@ class AuthService {
       debugPrint("❌ No role found for UID: $uid");
       return null;
     } catch (e) {
-      debugPrint("🔥 Error fetching role: $e");
+      debugPrint("\uD83D\uDD25 Error fetching role: $e");
       return null;
     }
   }
@@ -163,30 +159,6 @@ class AuthService {
   // Create Vendor Subcollections
   void _addVendorSubcollections(String uid, WriteBatch batch) {
     batch.set(
-      _firestore.collection('vendors').doc(uid).collection('CarDetails').doc(),
-      {
-        'modelName': '',
-        'carBrand': '',
-        'color': '',
-        'gearbox': '',
-        'power': '',
-        'maxSpeed': '',
-        'drive': '',
-        'location': '',
-        'motor': '',
-        'seats': 4,
-        'speed (0-100)': '',
-        '1MonthPrice': 0,
-        '6MonthPrice': 0,
-        '12MonthPrice': 0,
-        'backImage': '',
-        'frontImage': '',
-        'sideImage': '',
-        'createdAt': FieldValue.serverTimestamp(),
-      },
-    );
-
-    batch.set(
       _firestore
           .collection('vendors')
           .doc(uid)
@@ -198,20 +170,6 @@ class AuthService {
         'companyAbout': '',
         'location': 'Not specified',
         'contact': '',
-        'createdAt': FieldValue.serverTimestamp(),
-      },
-    );
-
-    batch.set(
-      _firestore.collection('vendors').doc(uid).collection('Booking').doc(),
-      {
-        'Exp': '',
-        'Cvv': '',
-        'Status': 'pending',
-        'PickupDate': '',
-        'PickupTime': '',
-        'ReturnDate': '',
-        'ReturnTime': '',
         'createdAt': FieldValue.serverTimestamp(),
       },
     );
@@ -251,7 +209,7 @@ class AuthService {
       await _auth.signOut();
       return null;
     } catch (e) {
-      debugPrint("🔥 SignOut Error: $e");
+      debugPrint("\uD83D\uDD25 SignOut Error: $e");
       return 'An error occurred while signing out.';
     }
   }

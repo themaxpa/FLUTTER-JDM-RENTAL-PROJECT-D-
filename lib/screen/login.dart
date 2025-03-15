@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/screen/unknown-screen.dart';
 import 'package:get/get.dart';
 import '../admin/home.dart';
 import '../user/showroom.dart';
@@ -96,37 +97,30 @@ class _LoginScreenState extends State<LoginScreen> {
         homeScreen = const Showroom();
         break;
       default:
-        homeScreen = const Center(child: Text("Unknown Role"));
+        homeScreen = const UnknownScreen();
     }
-    // Use Get.offAll to clear all previous screens from the navigation stack.
-    Get.offAll(() => homeScreen);
+
+    Get.off(() => homeScreen);
   }
 
   void _showErrorDialog(String title, String message) {
     showCupertinoDialog(
       context: context,
-      builder: (_) {
-        return CupertinoAlertDialog(
-          title: Text(title,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          content: Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(message,
-                style: const TextStyle(
-                    fontWeight: FontWeight.normal, fontSize: 14)),
+      builder: (_) => CupertinoAlertDialog(
+        title: Text(title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8.0),
+          child: Text(message, style: const TextStyle(fontSize: 14)),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
           ),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -179,14 +173,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => Get.to(() => const ForgotPasswordPage()),
-                  child: Material(
-                    color: Colors.grey[200],
-                    child: Text(
-                      "Forgot Password?",
-                      style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: CupertinoColors.activeBlue,
-                          fontSize: 13),
+                  child: Text(
+                    "Forgot Password?",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: CupertinoColors.activeBlue,
+                      fontSize: 13,
                     ),
                   ),
                 ),
@@ -205,21 +197,16 @@ class _LoginScreenState extends State<LoginScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Material(
-                    color: Colors.grey[200],
-                    child: const Text("Don't have an account?",
-                        style: TextStyle(fontSize: 12)),
-                  ),
+                  const Text("Don't have an account?",
+                      style: TextStyle(fontSize: 12)),
                   GestureDetector(
                     onTap: () => Get.off(() => const SignupScreen()),
-                    child: Material(
-                      color: Colors.grey[200],
-                      child: Text(
-                        " Signup here",
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: CupertinoColors.activeBlue,
-                            fontWeight: FontWeight.bold),
+                    child: Text(
+                      " Signup here",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: CupertinoColors.activeBlue,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),

@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../screen/payment_screen.dart';
-import 'more_car_details.dart';
+import '../vendor/cars/more_car_details.dart';
 
 class CarBookingScreen extends StatefulWidget {
   final Map<String, dynamic> car;
@@ -14,7 +15,116 @@ class CarBookingScreen extends StatefulWidget {
 }
 
 class _CarBookingScreenState extends State<CarBookingScreen> {
+  @override
+  @override
+  void initState() {
+    super.initState();
+    String vendorId = widget.car['vendorId'] ?? '';
+    if (vendorId.isNotEmpty) {
+      fetchVendorDetails(vendorId);
+    } else {
+      print('Vendor ID is missing.');
+    }
+  }
+
   String selectedPlan = '1 Month';
+
+  // Vendor Details
+  String vendorName = '';
+  String vendorEmail = '';
+  String vendorLocation = '';
+  String vendorProfileImage = '';
+
+  //Company Details
+  String companyName = '';
+  String companyLogo = '';
+  String companyAbout = '';
+  String companyLocation = '';
+
+  String _getValidField(
+      Map<String, dynamic>? data, String field, String defaultValue) {
+    if (data != null &&
+        data.containsKey(field) &&
+        data[field] != null &&
+        data[field].toString().isNotEmpty) {
+      return data[field].toString();
+    }
+    return defaultValue;
+  }
+
+  // 🔄 Fetch Vendor Name from Firestore
+  Future<void> fetchVendorDetails(String vendorId) async {
+    try {
+      String vendorId = widget.car['vendorId'] ?? '';
+      if (vendorId.isNotEmpty) {
+        // Fetch main vendor details
+        final vendorSnapshot = await FirebaseFirestore.instance
+            .collection('vendors')
+            .doc(vendorId)
+            .get();
+
+        if (vendorSnapshot.exists) {
+          final vendorData = vendorSnapshot.data() as Map<String, dynamic>;
+
+          setState(() {
+            vendorName = _getValidField(vendorData, 'name', 'Unknown Vendor');
+            vendorEmail = _getValidField(vendorData, 'email', 'No Email');
+            vendorLocation =
+                _getValidField(vendorData, 'location', 'No Location');
+            vendorProfileImage = _getValidField(vendorData, 'profileImage', '');
+          });
+
+          print('Vendor Name: $vendorName');
+        } else {
+          print('Vendor not found with ID: $vendorId');
+        }
+
+        // Fetch CompanyDetails subcollection
+        final companyDetailsSnapshot = await FirebaseFirestore.instance
+            .collection('vendors')
+            .doc(vendorId)
+            .collection('CompanyDetails')
+            .limit(1) // Get the first document if multiple exist
+            .get();
+
+        if (companyDetailsSnapshot.docs.isNotEmpty) {
+          final companyData = companyDetailsSnapshot.docs.first.data();
+
+          setState(() {
+            companyName =
+                _getValidField(companyData, 'companyName', 'Unknown Company');
+            companyLogo = _getValidField(companyData, 'companyLogo', '');
+            companyAbout =
+                _getValidField(companyData, 'companyAbout', 'No Description');
+            companyLocation =
+                _getValidField(companyData, 'location', 'No Location');
+          });
+
+          print('Company Name: $companyName');
+        } else {
+          print('No CompanyDetails found for vendorId: $vendorId');
+        }
+      } else {
+        print('Vendor ID is empty.');
+        setState(() {
+          vendorName = 'Unknown Vendor';
+        });
+      }
+    } catch (e) {
+      print('Error fetching vendor details: $e');
+      setState(() {
+        vendorName = 'Error Loading Vendor';
+      });
+    }
+  }
+
+  String _getValidFieldFromMap(
+      Map<String, dynamic> data, String field, String defaultValue) {
+    var value = data[field];
+    return (value != null && value.toString().isNotEmpty)
+        ? value
+        : defaultValue;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +137,8 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
           num.tryParse(widget.car['12MonthPrice'].toString()) ?? 0;
 
       print(widget.car);
+      // Print parameter data for debugging
+      print('Vendor Name: $vendorName, Company Name: $companyName');
 
       num selectedPrice = selectedPlan == '1 Month'
           ? oneMonthPrice
@@ -99,7 +211,7 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
                       children: [
                         Icon(Icons.location_on, size: 16),
                         SizedBox(width: 4),
-                        Text(widget.car['Car Brand'] ?? 'Unknown Brand'),
+                        Text(widget.car['Location'] ?? 'Currently Unavailabe'),
                         SizedBox(width: 16),
                         Icon(Icons.info, size: 16),
                         SizedBox(width: 4),
@@ -171,7 +283,13 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => PaymentScreen()),
+                MaterialPageRoute(
+                  builder: (context) => PaymentScreen(
+                    amount: selectedPrice,
+                    vendorName: vendorName,
+                    companyName: companyName,
+                  ),
+                ),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -181,7 +299,7 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text('Book Now \$$selectedPrice$priceSuffix',
+            child: Text('Book Now \₹$selectedPrice$priceSuffix',
                 style: TextStyle(fontSize: 16, color: Colors.white)),
           ),
         ),

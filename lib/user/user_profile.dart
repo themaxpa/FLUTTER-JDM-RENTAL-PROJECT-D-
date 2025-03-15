@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_app/screen/Privacy_policy.dart';
 import 'package:flutter_app/user/book_car.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -229,7 +230,8 @@ class _SellerProfileState extends State<ProfileScreen> {
                   const SizedBox(height: 20),
                   _buildMenuItem("Edit Profile", CupertinoIcons.pencil,
                       () => Get.to(() => const UpdateProfileScreen())),
-                  _buildMenuItem("Settings", CupertinoIcons.gear_alt, () {}),
+                  _buildMenuItem("Settings", CupertinoIcons.gear_alt,
+                      () => Get.to(() => PrivacyPolicyScreen())),
                   _buildMenuItem("My Documents", CupertinoIcons.doc_text,
                       () => Get.to(() => MyDocumentsScreen())),
                   _buildMenuItem("Support", CupertinoIcons.person_2_alt, () {}),
