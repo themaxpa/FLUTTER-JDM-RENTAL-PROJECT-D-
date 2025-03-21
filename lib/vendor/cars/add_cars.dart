@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:uuid/uuid.dart'; // Import the uuid package
 
 class AddCars extends StatefulWidget {
   const AddCars({super.key});
@@ -114,6 +115,18 @@ class _AddCarsState extends State<AddCars> {
         return;
       }
 
+      // Fetch vendor details
+      DocumentSnapshot vendorSnapshot =
+          await _firestore.collection('vendors').doc(vendorId).get();
+
+      if (!vendorSnapshot.exists) {
+        _showErrorDialog("Vendor details not found.");
+        return;
+      }
+
+      String vendorName = vendorSnapshot["name"] ?? "Unknown Vendor";
+      String vendorLocation = vendorSnapshot["location"] ?? "Unknown Location";
+
       String? frontImageUrl = await uploadImageToCloudinary(_frontImage!);
       String? backImageUrl = await uploadImageToCloudinary(_backImage!);
       String? sideImageUrl = await uploadImageToCloudinary(_sideImage!);
@@ -124,17 +137,27 @@ class _AddCarsState extends State<AddCars> {
         return;
       }
 
+      // Generate a unique carId
+      var uuid = Uuid();
+      String carId = uuid.v4();
+
+      // Upload car details to Firestore
       await _firestore
           .collection('vendors')
           .doc(vendorId)
           .collection('CarDetails')
-          .add({
+          .doc(carId) // Use carId as the document ID
+          .set({
         for (var entry in _controllers.entries) entry.key: entry.value.text,
         "frontImage": frontImageUrl,
         "backImage": backImageUrl,
         "sideImage": sideImageUrl,
-        "vendorId": vendorId, // Added vendorId here
+        "vendorId": vendorId,
+        "vendorName": vendorName,
+        "vendorLocation": vendorLocation,
+        "Status": 'approved',
         "createdAt": FieldValue.serverTimestamp(),
+        "carId": carId, // Store the carId in the document
       });
 
       _resetForm();

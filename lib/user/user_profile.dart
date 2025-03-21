@@ -2,11 +2,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_app/screen/Privacy_policy.dart';
-import 'package:flutter_app/user/book_car.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
+
+import 'package:flutter_app/screen/Privacy_policy.dart';
 import 'package:flutter_app/screen/screen_splash.dart';
 import 'package:flutter_app/user/update_user_profile.dart';
 import 'my_documents.dart';

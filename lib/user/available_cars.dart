@@ -62,7 +62,11 @@ Widget buildAvailableCars(BuildContext context) {
                       Navigator.push(
                         context,
                         CupertinoPageRoute(
-                          builder: (context) => CarBookingScreen(car: carData),
+                          builder: (context) => CarBookingScreen(
+                            car: carData,
+                            carId: null,
+                            vendorId: null,
+                          ),
                         ),
                       );
                     },
@@ -141,7 +145,7 @@ Widget buildAvailableCars(BuildContext context) {
                                                 BorderRadius.circular(12),
                                           ),
                                           child: Text(
-                                            '${carData['Deals'] ?? '18'} Deals',
+                                            '${carData['vendorName'] ?? 'Vendor'} Deals',
                                             style: const TextStyle(
                                                 color: Colors.white),
                                           ),
@@ -185,7 +189,10 @@ Widget buildAvailableCars(BuildContext context) {
                                             CupertinoPageRoute(
                                               builder: (context) =>
                                                   CarBookingScreen(
-                                                      car: carData),
+                                                car: carData,
+                                                carId: null,
+                                                vendorId: null,
+                                              ),
                                             ),
                                           );
                                         },

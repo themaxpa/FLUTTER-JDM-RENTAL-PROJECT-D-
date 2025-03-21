@@ -6,7 +6,7 @@ import 'package:flutter_app/user/user_profile.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-import '../screen/notification.dart';
+import '../screen/history.dart';
 import '../screen/screen_main.dart';
 
 class Showroom extends StatefulWidget {
@@ -32,7 +32,7 @@ class _ShowroomState extends State<Showroom> {
     return [
       _buildShowroomContent(),
       ScreenMain(),
-      NotificationScreen(),
+      CarRentalHistoryScreen(),
       ProfileScreen()
     ];
   }
@@ -130,7 +130,6 @@ class _ShowroomState extends State<Showroom> {
                   child: Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16),
-                      // Add space to left and right
                       child: Container(
                         padding:
                             EdgeInsets.symmetric(horizontal: 10, vertical: 16),
@@ -218,13 +217,11 @@ class _ShowroomState extends State<Showroom> {
             final modelName =
                 data['Model Name']?.toString().trim().toLowerCase() ?? '';
             final carBrand = data['Car Brand']?.toString().toLowerCase() ?? '';
+            final status = data['Status']?.toString().toLowerCase() ?? '';
 
-            // Filter out documents with empty 'Model Name'
-            if (modelName.isEmpty) {
-              return false;
-            }
+            // Exclude cars with "pending" status
+            if (status == 'pending') return false;
 
-            // Apply search filter
             return modelName.contains(searchQuery) ||
                 carBrand.contains(searchQuery);
           }).toList();
@@ -245,7 +242,11 @@ class _ShowroomState extends State<Showroom> {
                   Navigator.push(
                     context,
                     CupertinoPageRoute(
-                      builder: (context) => CarBookingScreen(car: carData),
+                      builder: (context) => CarBookingScreen(
+                        car: carData, // Pass the entire carData map
+                        carId: carData['carId'], // Pass carId
+                        vendorId: carData['vendorId'], // Pass vendorId
+                      ),
                     ),
                   );
                 },
@@ -280,9 +281,13 @@ class _ShowroomState extends State<Showroom> {
                               Text(carData['Car Brand'] ?? 'No Car Brand',
                                   style: TextStyle(
                                       color: CupertinoColors.systemGrey)),
+                              Text(carData['vendorName'] ?? 'Not Available',
+                                  style: TextStyle(
+                                      color: CupertinoColors.systemGrey)),
+                              SizedBox(height: 4),
                             ],
                           ),
-                        )
+                        ),
                       ],
                     ),
                   ),

@@ -102,11 +102,9 @@ class _AuthCheckState extends State<AuthCheck> {
         homeScreen = const AdminHome();
         break;
       case 'vendor':
-      case 'vendors':
         homeScreen = const SellerHome();
         break;
       case 'user':
-      case 'users':
         homeScreen = const Showroom();
         break;
       default:
