@@ -14,7 +14,7 @@ class AddCars extends StatefulWidget {
   State<AddCars> createState() => _AddCarsState();
 }
 
-class _AddCarsState extends State<AddCars> {
+class _AddCarsState extends State<AddCars> with SingleTickerProviderStateMixin {
   final ImagePicker _picker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,11 +23,48 @@ class _AddCarsState extends State<AddCars> {
   File? _frontImage;
   File? _backImage;
   File? _sideImage;
+  bool _isLoading = false;
+
+  // Animation controller for smooth transitions
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeControllers();
+
+    // Initialize animations
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.05),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start the animation
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _initializeControllers() {
@@ -36,9 +73,9 @@ class _AddCarsState extends State<AddCars> {
       "Car Brand",
       "description",
       "carType",
-      "12MonthPrice",
       "6MonthPrice",
       "1MonthPrice",
+      "1DayPrice",
       "Color",
       "drive",
       "maxSpeed",
@@ -47,7 +84,8 @@ class _AddCarsState extends State<AddCars> {
       "Seats",
       "Motor",
       "Speed (0-100)",
-      "Location"
+      "Location",
+      "consumption"
     ]) {
       _controllers[field] = TextEditingController();
     }
@@ -108,6 +146,10 @@ class _AddCarsState extends State<AddCars> {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
       final vendorId = _auth.currentUser?.uid;
       if (vendorId == null) {
@@ -134,6 +176,9 @@ class _AddCarsState extends State<AddCars> {
       if (frontImageUrl == null ||
           backImageUrl == null ||
           sideImageUrl == null) {
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
 
@@ -156,13 +201,21 @@ class _AddCarsState extends State<AddCars> {
         "vendorName": vendorName,
         "vendorLocation": vendorLocation,
         "Status": 'approved',
+        "status": 'available',
         "createdAt": FieldValue.serverTimestamp(),
         "carId": carId, // Store the carId in the document
+      });
+
+      setState(() {
+        _isLoading = false;
       });
 
       _resetForm();
       _showSuccessDialog("Car details uploaded successfully.");
     } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
       _showErrorDialog("Error uploading car details. Please try again.");
     }
   }
@@ -205,17 +258,22 @@ class _AddCarsState extends State<AddCars> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 6),
+          Text(
+            label,
+            style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: CupertinoColors.darkBackgroundGray),
+          ),
+          const SizedBox(height: 8),
           CupertinoTextField(
             controller: controller,
             placeholder: "Enter $label",
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
             decoration: BoxDecoration(
               color: CupertinoColors.systemGrey6,
               borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: CupertinoColors.systemGrey4),
             ),
           ),
         ],
@@ -229,17 +287,71 @@ class _AddCarsState extends State<AddCars> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 6),
-          CupertinoButton(
-            child: image == null
-                ? const Text("Pick Image")
-                : Image.file(image, height: 100),
-            onPressed: () => _pickImage(setImage),
+          Text(
+            label,
+            style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 15,
+                color: CupertinoColors.darkBackgroundGray),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () => _pickImage(setImage),
+            child: Container(
+              height: 120,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: CupertinoColors.systemGrey4),
+              ),
+              child: image == null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            CupertinoIcons.camera,
+                            size: 32,
+                            color: CupertinoColors.systemGrey,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Tap to select image",
+                            style: TextStyle(
+                              color: CupertinoColors.systemGrey.darkColor,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.file(
+                        image,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        height: 120,
+                      ),
+                    ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 12),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: CupertinoColors.activeBlue,
+        ),
       ),
     );
   }
@@ -247,48 +359,167 @@ class _AddCarsState extends State<AddCars> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.white,
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ..._controllers.entries
-                    .map((entry) => _buildTextField(entry.key, entry.value)),
-                _buildImagePicker(
-                    "Car Front View", _frontImage, (img) => _frontImage = img),
-                _buildImagePicker(
-                    "Car Back View", _backImage, (img) => _backImage = img),
-                _buildImagePicker(
-                    "Car Side View", _sideImage, (img) => _sideImage = img),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CupertinoButton(
-                        color: CupertinoColors.systemGrey5,
-                        onPressed: _resetForm,
-                        child: const Text("Reset",
-                            style: TextStyle(color: CupertinoColors.black)),
+      backgroundColor: CupertinoColors.systemBackground,
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text("Add New Car"),
+        backgroundColor: CupertinoColors.systemBackground,
+        border: null,
+      ),
+      child: SafeArea(
+        child: _isLoading
+            ? const Center(child: CupertinoActivityIndicator(radius: 12))
+            : FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Basic Information Section
+                          _buildSectionHeader("Basic Information"),
+                          _buildTextField(
+                              "Car Brand", _controllers["Car Brand"]!),
+                          _buildTextField(
+                              "Model Name", _controllers["Model Name"]!),
+                          _buildTextField("carType", _controllers["carType"]!),
+                          _buildTextField("Color", _controllers["Color"]!),
+                          _buildTextField(
+                              "description", _controllers["description"]!),
+
+                          // Pricing Section
+                          _buildSectionHeader("Pricing"),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                    "1DayPrice", _controllers["1DayPrice"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField("1MonthPrice",
+                                    _controllers["1MonthPrice"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField("6MonthPrice",
+                                    _controllers["6MonthPrice"]!),
+                              ),
+                            ],
+                          ),
+
+                          // Technical Specifications
+                          _buildSectionHeader("Technical Specifications"),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                    "drive", _controllers["drive"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField(
+                                    "Gearbox", _controllers["Gearbox"]!),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                    "Motor", _controllers["Motor"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField(
+                                    "power", _controllers["power"]!),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                    "maxSpeed", _controllers["maxSpeed"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField("Speed (0-100)",
+                                    _controllers["Speed (0-100)"]!),
+                              ),
+                            ],
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                    "Seats", _controllers["Seats"]!),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildTextField("consumption",
+                                    _controllers["consumption"]!),
+                              ),
+                            ],
+                          ),
+                          _buildTextField(
+                              "Location", _controllers["Location"]!),
+
+                          // Car Images Section
+                          _buildSectionHeader("Car Images"),
+                          _buildImagePicker("Car Front View", _frontImage,
+                              (img) => _frontImage = img),
+                          _buildImagePicker("Car Back View", _backImage,
+                              (img) => _backImage = img),
+                          _buildImagePicker("Car Side View", _sideImage,
+                              (img) => _sideImage = img),
+
+                          const SizedBox(height: 24),
+
+                          // Action Buttons
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CupertinoButton(
+                                  color: CupertinoColors.systemGrey5,
+                                  borderRadius: BorderRadius.circular(8),
+                                  onPressed: _resetForm,
+                                  child: const Text(
+                                    "Reset",
+                                    style: TextStyle(
+                                      color: CupertinoColors.darkBackgroundGray,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CupertinoButton(
+                                  color: CupertinoColors.activeBlue,
+                                  borderRadius: BorderRadius.circular(8),
+                                  onPressed: _uploadCarDetails,
+                                  child: const Text(
+                                    "Upload",
+                                    style: TextStyle(
+                                      color: CupertinoColors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: CupertinoButton(
-                        color: CupertinoColors.activeBlue,
-                        onPressed: _uploadCarDetails,
-                        child: const Text("Upload",
-                            style: TextStyle(color: CupertinoColors.white)),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
     );
   }

@@ -100,6 +100,13 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
     );
   }
 
+  // Helper method to safely get data from document
+  dynamic getDocumentData(DocumentSnapshot doc, String field) {
+    return doc.data() != null && (doc.data() as Map).containsKey(field)
+        ? doc[field]
+        : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -125,14 +132,11 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                     if (value != null) filterUsers(value);
                   },
                   backgroundColor: CupertinoColors.systemGrey5,
-                  // Background of the control
                   thumbColor: CupertinoColors.white,
-                  // Thumb (selected segment) color
                   children: {
                     'all': Text(
                       'All',
-                      style: TextStyle(
-                          color: CupertinoColors.black), // Text color only
+                      style: TextStyle(color: CupertinoColors.black),
                     ),
                     'users': Text(
                       'Users',
@@ -157,9 +161,12 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                             itemBuilder: (context, index) {
                               var user = displayedUsers[index];
                               String uid = user.id;
-                              String name = user['name'] ?? 'N/A';
-                              String email = user['email'] ?? 'N/A';
-                              String? profileImage = user['profileImage'];
+                              String name =
+                                  getDocumentData(user, 'name') ?? 'N/A';
+                              String email =
+                                  getDocumentData(user, 'email') ?? 'N/A';
+                              String? profileImage =
+                                  getDocumentData(user, 'profileImage');
                               bool isExpanded = expandedCards[uid] ?? false;
                               String collection = user.reference.parent.id;
 
@@ -189,8 +196,7 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                             CrossAxisAlignment.center,
                                         children: [
                                           ClipOval(
-                                            child: profileImage != null &&
-                                                    profileImage.isNotEmpty
+                                            child: profileImage != null
                                                 ? Image.network(
                                                     profileImage,
                                                     width: avatarSize,
@@ -200,7 +206,6 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                                         error, stackTrace) {
                                                       return Image.asset(
                                                         'assets/images/img.jpg',
-                                                        // Default image
                                                         width: avatarSize,
                                                         height: avatarSize,
                                                         fit: BoxFit.cover,
@@ -208,7 +213,7 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                                     },
                                                   )
                                                 : Image.asset(
-                                                    'assets/images/img.jpg', // Default image
+                                                    'assets/images/img.jpg',
                                                     width: avatarSize,
                                                     height: avatarSize,
                                                     fit: BoxFit.cover,
@@ -281,7 +286,7 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                         Material(
                                           color: CupertinoColors.transparent,
                                           child: Text(
-                                            "Phone: ${user['phone'] ?? 'N/A'}",
+                                            "Phone: ${getDocumentData(user, 'phone') ?? 'N/A'}",
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 color:
@@ -292,7 +297,7 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                         Material(
                                           color: CupertinoColors.transparent,
                                           child: Text(
-                                            "Location: ${user['location'] ?? 'N/A'}",
+                                            "Location: ${getDocumentData(user, 'location') ?? 'N/A'}",
                                             style: TextStyle(
                                                 fontSize: 14,
                                                 color:

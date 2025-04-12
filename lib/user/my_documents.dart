@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 class MyDocumentsScreen extends StatefulWidget {
@@ -13,35 +15,35 @@ class MyDocumentsScreen extends StatefulWidget {
 class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
   final List<Map<String, dynamic>> documents = [
     {
-      "title": "DL Front Side",
+      "title": "DLFrontSide",
       "image": null,
       "url": null,
       "isUploading": false,
       "isUploaded": false
     },
     {
-      "title": "DL Back Side",
+      "title": "DLBackSide",
       "image": null,
       "url": null,
       "isUploading": false,
       "isUploaded": false
     },
     {
-      "title": "Pan Card",
+      "title": "PanCard",
       "image": null,
       "url": null,
       "isUploading": false,
       "isUploaded": false
     },
     {
-      "title": "Aadhaar Card Front",
+      "title": "AadhaarCardFront",
       "image": null,
       "url": null,
       "isUploading": false,
       "isUploaded": false
     },
     {
-      "title": "Aadhaar Card Back",
+      "title": "AadhaarCardBack",
       "image": null,
       "url": null,
       "isUploading": false,
@@ -50,6 +52,9 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
   ];
 
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = true;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -59,53 +64,79 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
 
   Future<void> _loadUploadedDocuments() async {
     try {
-      // Fetch all documents data from Firestore
-      final snapshot =
-          await FirebaseFirestore.instance.collection("user_documents").get();
-      for (var doc in snapshot.docs) {
-        String title = doc["title"];
-        String url = doc["url"];
+      User? user = _auth.currentUser;
+      if (user == null) return;
 
-        // Find the matching document in the list
-        final index = documents.indexWhere((doc) => doc["title"] == title);
-        if (index != -1) {
+      final snapshot = await _firestore
+          .collection("users")
+          .doc(user.uid)
+          .collection("MyDocuments")
+          .get();
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final index =
+            documents.indexWhere((item) => item["title"] == data["title"]);
+        if (index != -1 && data["url"] != null) {
           setState(() {
-            documents[index]["url"] = url;
-            documents[index]["isUploaded"] = url != null &&
-                url.isNotEmpty; // Ensure it's set to true if URL is present
+            documents[index]["url"] = data["url"];
+            documents[index]["isUploaded"] = true;
           });
         }
       }
     } catch (e) {
       print("Error loading documents: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to load documents. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _pickImage(int index) async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      File imageFile = File(pickedFile.path);
+    try {
+      final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+
       setState(() {
-        documents[index]["image"] = imageFile;
+        documents[index]["image"] = File(pickedFile.path);
         documents[index]["isUploading"] = true;
       });
 
-      // Upload image to Cloudinary
-      String? imageUrl = await uploadImageToCloudinary(imageFile);
+      final imageUrl = await uploadImageToCloudinary(File(pickedFile.path));
+      if (imageUrl == null) throw Exception("Failed to upload image");
 
-      // Update state after upload
+      await _submitData(index, imageUrl);
+
       setState(() {
+        documents[index]["url"] = imageUrl;
+        documents[index]["isUploaded"] = true;
         documents[index]["isUploading"] = false;
-        if (imageUrl != null) {
-          documents[index]["url"] = imageUrl;
-          documents[index]["isUploaded"] = true; // Mark as uploaded
-        }
       });
 
-      // If upload was successful, submit data to Firestore
-      if (imageUrl != null) {
-        _submitData(index);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("${documents[index]["title"]} uploaded successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      print("Error uploading document: $e");
+      setState(() {
+        documents[index]["isUploading"] = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Failed to upload document. Please try again."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -118,80 +149,138 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
       request.fields['upload_preset'] = 'project-d';
       request.files
           .add(await http.MultipartFile.fromPath('file', imageFile.path));
-      var response = await request.send();
 
-      if (response.statusCode == 200) {
-        var responseData = await response.stream.bytesToString();
-        var jsonData = json.decode(responseData);
-        return jsonData['secure_url'];
-      } else {
-        print("Cloudinary Upload Failed: ${response.reasonPhrase}");
-        return null;
-      }
+      var response = await request.send();
+      if (response.statusCode != 200) return null;
+
+      var responseData = await response.stream.bytesToString();
+      return json.decode(responseData)['secure_url'];
     } catch (e) {
-      print("Error uploading image: $e");
+      print("Error uploading to Cloudinary: $e");
       return null;
     }
   }
 
-  Future<void> _submitData(int index) async {
-    if (documents[index]["url"] != null) {
-      try {
-        // Add the document data to Firestore
-        await FirebaseFirestore.instance.collection("user_documents").add({
-          "title": documents[index]["title"],
-          "url": documents[index]["url"],
-          "timestamp": FieldValue.serverTimestamp(),
-        });
+  Future<void> _submitData(int index, String imageUrl) async {
+    try {
+      User? user = _auth.currentUser;
+      if (user == null) throw Exception("User not logged in");
 
-        // Show a confirmation SnackBar after the image link is uploaded to Firestore
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text("${documents[index]["title"]} Uploaded Successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } catch (e) {
-        // If there is an error, show an error SnackBar
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                "Failed to upload ${documents[index]["title"]}. Please try again."),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      await _firestore
+          .collection("users")
+          .doc(user.uid)
+          .collection("MyDocuments")
+          .doc(documents[index]["title"])
+          .set({
+        "title": documents[index]["title"],
+        "url": imageUrl,
+        "timestamp": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print("Error saving to Firestore: $e");
+      rethrow;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF1F4F9),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Text("My Documents",
-            style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.black)),
+    return CupertinoPageScaffold(
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(
+          'My Documents',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.41,
+          ),
+        ),
+        backgroundColor: CupertinoColors.systemBackground,
+        border: null,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: documents.length,
-          itemBuilder: (context, index) {
-            return DocumentItem(
-              title: documents[index]["title"],
-              image: documents[index]["image"],
-              url: documents[index]["url"],
-              isUploading: documents[index]["isUploading"],
-              isUploaded: documents[index]["isUploaded"],
-              onUpload: () => _pickImage(index),
-            );
-          },
+      child: SafeArea(
+        child: _isLoading
+            ? Center(child: CupertinoActivityIndicator(radius: 16))
+            : ListView.builder(
+                padding: EdgeInsets.only(top: 8),
+                itemCount: documents.length,
+                itemBuilder: (context, index) => _buildIOSDocumentItem(index),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildIOSDocumentItem(int index) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemBackground,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: CupertinoColors.systemGrey.withOpacity(0.2),
+              blurRadius: 3,
+              spreadRadius: 1,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: CupertinoButton(
+          padding: EdgeInsets.all(16),
+          borderRadius: BorderRadius.circular(10),
+          onPressed: () => _pickImage(index),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Tap to upload/view",
+                      style: TextStyle(
+                        color: CupertinoColors.secondaryLabel,
+                        fontSize: 13,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      documents[index]["title"],
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: CupertinoColors.label,
+                      ),
+                    ),
+                    if (documents[index]["url"] != null) SizedBox(height: 8),
+                    if (documents[index]["url"] != null)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          documents[index]["url"],
+                          width: 100,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SizedBox(width: 8),
+              if (documents[index]["isUploading"])
+                CupertinoActivityIndicator(radius: 12)
+              else
+                Icon(
+                  documents[index]["isUploaded"]
+                      ? CupertinoIcons.checkmark_alt_circle_fill
+                      : CupertinoIcons.checkmark_alt_circle,
+                  color: documents[index]["isUploaded"]
+                      ? CupertinoColors.systemGreen
+                      : CupertinoColors.systemGrey,
+                  size: 24,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -200,7 +289,6 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
 
 class DocumentItem extends StatelessWidget {
   final String title;
-  final File? image;
   final String? url;
   final bool isUploading;
   final bool isUploaded;
@@ -208,7 +296,6 @@ class DocumentItem extends StatelessWidget {
 
   const DocumentItem({
     required this.title,
-    required this.image,
     required this.url,
     required this.isUploading,
     required this.isUploaded,
@@ -237,40 +324,43 @@ class DocumentItem extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Tap to upload/view",
-                    style: TextStyle(fontSize: 14, color: Colors.grey)),
-                SizedBox(height: 4),
-                Text(
-                  title,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black),
-                ),
-                if (url != null) SizedBox(height: 8),
-                if (url != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      url!,
-                      width: 100,
-                      height: 60,
-                      fit: BoxFit.cover,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Tap to upload/view",
+                      style: TextStyle(color: Colors.grey)),
+                  SizedBox(height: 4),
+                  Text(title,
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  if (url != null) SizedBox(height: 8),
+                  if (url != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        url!,
+                        width: 100,
+                        height: 60,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-            isUploading
-                ? CircularProgressIndicator()
-                : Icon(
-                    isUploaded
-                        ? Icons.check_circle
-                        : Icons.check_circle_outline,
-                    color: isUploaded ? Colors.green : Colors.orange,
-                  ),
+            SizedBox(width: 16),
+            if (isUploading)
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                isUploaded ? Icons.check_circle : Icons.check_circle_outline,
+                color: isUploaded ? Colors.green : Colors.orange,
+                size: 28,
+              ),
           ],
         ),
       ),

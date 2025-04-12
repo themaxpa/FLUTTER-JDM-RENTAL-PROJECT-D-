@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,167 +47,284 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: CupertinoSlidingSegmentedControl<bool>(
-              thumbColor: CupertinoColors.activeBlue,
-              backgroundColor: CupertinoColors.systemGrey5,
-              children: {
-                false: Text('All',
-                    style: TextStyle(
-                        color: !showMyCars
-                            ? CupertinoColors.white
-                            : CupertinoColors.black)),
-                true: Text('My Cars',
-                    style: TextStyle(
-                        color: showMyCars
-                            ? CupertinoColors.white
-                            : CupertinoColors.black)),
-              },
-              groupValue: showMyCars,
-              onValueChanged: (bool? value) {
-                setState(() {
-                  showMyCars = value ?? false;
-                });
-              },
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore.collectionGroup('CarDetails').snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CupertinoActivityIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text("Error: ${snapshot.error}"));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(child: Text("No car listings available."));
-                }
-
-                var carDocs = snapshot.data!.docs.where((doc) {
-                  if (!showMyCars) return true;
-                  return doc.reference.parent.parent?.id == currentUserId;
-                }).toList();
-
-                return GridView.builder(
-                  padding: EdgeInsets.all(16),
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.8,
+      navigationBar: CupertinoNavigationBar(
+        middle: Text('Available Cars'),
+        backgroundColor: CupertinoColors.systemBackground.withOpacity(0.8),
+        border: null,
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBackground.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: CupertinoColors.systemGrey.withOpacity(0.1),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: CupertinoSlidingSegmentedControl<bool>(
+                        thumbColor: CupertinoColors.activeBlue,
+                        backgroundColor: CupertinoColors.systemGrey6,
+                        children: {
+                          false: Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            child: Text(
+                              'All Cars',
+                              style: TextStyle(
+                                color: !showMyCars
+                                    ? CupertinoColors.white
+                                    : CupertinoColors.black,
+                              ),
+                            ),
+                          ),
+                          true: Padding(
+                            padding: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
+                            child: Text(
+                              'My Cars',
+                              style: TextStyle(
+                                color: showMyCars
+                                    ? CupertinoColors.white
+                                    : CupertinoColors.black,
+                              ),
+                            ),
+                          ),
+                        },
+                        groupValue: showMyCars,
+                        onValueChanged: (bool? value) {
+                          setState(() {
+                            showMyCars = value ?? false;
+                          });
+                        },
+                      ),
+                    ),
                   ),
-                  itemCount: carDocs.length,
-                  itemBuilder: (context, index) {
-                    var carData = carDocs[index].data() as Map<String, dynamic>;
-                    var isMyCar = carDocs[index].reference.parent.parent?.id ==
-                        currentUserId;
-                    return _buildCarCard(
-                        context, carData, isMyCar, carDocs[index].reference);
+                ),
+              ),
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _firestore.collectionGroup('CarDetails').snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CupertinoActivityIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(child: Text("Error: ${snapshot.error}"));
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Center(child: Text("No car listings available."));
+                    }
+
+                    var carDocs = snapshot.data!.docs.where((doc) {
+                      if (!showMyCars) return true;
+                      return doc.reference.parent.parent?.id == currentUserId;
+                    }).toList();
+
+                    return ListView.builder(
+                      padding: EdgeInsets.all(16),
+                      itemCount: carDocs.length,
+                      itemBuilder: (context, index) {
+                        var carData =
+                            carDocs[index].data() as Map<String, dynamic>;
+                        var isMyCar =
+                            carDocs[index].reference.parent.parent?.id ==
+                                currentUserId;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildCarCard(context, carData, isMyCar,
+                              carDocs[index].reference),
+                        );
+                      },
+                    );
                   },
-                );
-              },
-            ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildCarCard(BuildContext context, Map<String, dynamic> carData,
       bool isMyCar, DocumentReference carRef) {
-    String priceText = 'Price not available';
-    if (carData['1MonthPrice'] != null) {
-      priceText = '₹ ${carData['1MonthPrice'].toString()}';
-    }
+    String rentalType = carData['rentalType'] ?? 'Weekly';
 
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           CupertinoPageRoute(
-              builder: (context) => CarDetailsScreen(car: carData)),
+            builder: (context) => CarDetailsScreen(car: carData),
+          ),
         );
       },
       child: Container(
+        height: 200,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          color: CupertinoColors.white,
+          color: CupertinoColors.systemBackground.withOpacity(0.7),
           boxShadow: [
             BoxShadow(
-                color: CupertinoColors.systemGrey.withOpacity(0.2),
-                blurRadius: 8,
-                offset: Offset(0, 4))
+              color: CupertinoColors.systemGrey.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Stack(
+              fit: StackFit.expand,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                  child: Image.network(
-                    carData['frontImage']?.toString() ?? '',
-                    height: 120,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
+                // Background Image with Gradient
+                Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image:
+                          NetworkImage(carData['frontImage']?.toString() ?? ''),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-                if (isMyCar)
-                  Positioned(
-                    bottom: 8,
-                    right: 8,
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              CupertinoPageRoute(
-                                builder: (context) => EditCars(
-                                  carId: carRef.id,
-                                  initialData: carData,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Icon(
-                            CupertinoIcons.pencil,
-                            color: CupertinoColors.activeBlue,
+                // Gradient Overlay
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        CupertinoColors.black.withOpacity(0.7),
+                      ],
+                      stops: [0.5, 1.0],
+                    ),
+                  ),
+                ),
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Rental Type Badge
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.activeBlue.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          rentalType,
+                          style: TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => _showDeleteConfirmation(carRef),
-                          child: Icon(CupertinoIcons.delete,
-                              color: CupertinoColors.destructiveRed),
+                      ),
+                      Spacer(),
+                      Text(
+                        carData['Car Brand']?.toString() ?? 'Brand',
+                        style: TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        carData['Model Name']?.toString() ?? 'Model',
+                        style: TextStyle(
+                          color: CupertinoColors.white.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'per ${rentalType.toLowerCase()}',
+                        style: TextStyle(
+                          color: CupertinoColors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Edit/Delete Buttons for owner
+                if (isMyCar)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Row(
+                          children: [
+                            _buildIconButton(
+                              CupertinoIcons.pencil,
+                              () {
+                                Navigator.push(
+                                  context,
+                                  CupertinoPageRoute(
+                                    builder: (context) => EditCars(
+                                      carId: carRef.id,
+                                      initialData: carData,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            SizedBox(width: 8),
+                            _buildIconButton(
+                              CupertinoIcons.delete,
+                              () => _showDeleteConfirmation(carRef),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(carData['Model Name']?.toString() ?? 'Model',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(carData['Car Brand']?.toString() ?? 'Brand',
-                      style: TextStyle(color: CupertinoColors.systemGrey)),
-                  SizedBox(height: 4),
-                  Text(priceText,
-                      style: TextStyle(color: CupertinoColors.systemGrey)),
-                ],
-              ),
-            ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconButton(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemBackground.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: CupertinoColors.white,
+          size: 20,
         ),
       ),
     );

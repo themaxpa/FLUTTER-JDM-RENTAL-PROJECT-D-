@@ -28,7 +28,15 @@ class CarRentalHistoryScreen extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text("No rental history found."));
+            return const Center(
+              child: Text(
+                "No rental history found.",
+                style: TextStyle(
+                  color: CupertinoColors.systemGrey,
+                  fontSize: 16,
+                ),
+              ),
+            );
           }
 
           var bookings = snapshot.data!.docs;
@@ -155,21 +163,18 @@ class _BookingCardState extends State<BookingCard> {
 
       setState(() {
         _status = 'cancelled';
-        _cancelledDate = DateFormat('yyyy-MM-dd')
-            .format(now.toDate()); // Format without time
+        _cancelledDate = DateFormat('yyyy-MM-dd').format(now.toDate());
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Format pickupDate and returnDate to display only the date (without time)
     String formattedPickupDate =
         DateFormat('yyyy-MM-dd').format(DateTime.parse(widget.pickupDate));
     String formattedReturnDate =
         DateFormat('yyyy-MM-dd').format(DateTime.parse(widget.returnDate));
 
-    // Use MediaQuery to make the UI responsive
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
@@ -196,10 +201,12 @@ class _BookingCardState extends State<BookingCard> {
                 if (widget.frontImage != null)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(widget.frontImage!,
-                        width: screenWidth * 0.2, // Responsive width
-                        height: 60,
-                        fit: BoxFit.cover),
+                    child: Image.network(
+                      widget.frontImage!,
+                      width: screenWidth * 0.2,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -212,9 +219,8 @@ class _BookingCardState extends State<BookingCard> {
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
-                        maxLines: 1, // Prevent overflow
-                        overflow: TextOverflow
-                            .ellipsis, // Add ellipsis if text overflows
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -223,9 +229,8 @@ class _BookingCardState extends State<BookingCard> {
                           fontSize: 14,
                           color: CupertinoColors.systemGrey,
                         ),
-                        maxLines: 1, // Prevent overflow
-                        overflow: TextOverflow
-                            .ellipsis, // Add ellipsis if text overflows
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
@@ -243,7 +248,7 @@ class _BookingCardState extends State<BookingCard> {
             Row(
               children: [
                 Icon(
-                  Icons.star,
+                  CupertinoIcons.star_fill,
                   color: CupertinoColors.systemYellow,
                   size: 16,
                 ),
@@ -261,9 +266,8 @@ class _BookingCardState extends State<BookingCard> {
                   style: const TextStyle(
                     fontSize: 14,
                   ),
-                  maxLines: 1, // Prevent overflow
-                  overflow:
-                      TextOverflow.ellipsis, // Add ellipsis if text overflows
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -274,27 +278,23 @@ class _BookingCardState extends State<BookingCard> {
                 Flexible(
                   child: Text(
                     "Pickup: $formattedPickupDate",
-                    // Display formatted date without time
                     style: TextStyle(
                       fontSize: 14,
                       color: CupertinoColors.systemGrey,
                     ),
-                    maxLines: 1, // Prevent overflow
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis if text overflows
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Flexible(
                   child: Text(
                     "Return: $formattedReturnDate",
-                    // Display formatted date without time
                     style: TextStyle(
                       fontSize: 14,
                       color: CupertinoColors.systemGrey,
                     ),
-                    maxLines: 1, // Prevent overflow
-                    overflow:
-                        TextOverflow.ellipsis, // Add ellipsis if text overflows
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

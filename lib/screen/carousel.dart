@@ -17,7 +17,7 @@ class PageViewerScreen extends StatelessWidget {
           'Plan your next trip,save POIs and send destination to your vehicle.',
     ),
     PageData(
-      image: 'assets/images/loginBG.png',
+      image: 'assets/images/ph2.jpg',
       title: 'A more personal experience',
       description:
           'Synchronize your personal settings and enjoy a more personal interaction with JDM and your JDm service center',

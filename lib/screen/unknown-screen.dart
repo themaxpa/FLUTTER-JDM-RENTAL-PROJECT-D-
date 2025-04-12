@@ -45,6 +45,7 @@ class _UnknownScreenState extends State<UnknownScreen> {
         ),
         Center(
           child: Material(
+            color: Colors.transparent,
             child: Text(
               'INVALID CREDENTIALS',
               style: TextStyle(

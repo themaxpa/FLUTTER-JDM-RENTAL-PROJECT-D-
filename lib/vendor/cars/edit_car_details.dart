@@ -180,11 +180,59 @@ class _EditCarsState extends State<EditCars> {
     );
   }
 
+  Widget _buildImageSection(String title, String? imageUrl, Function() onTap) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: onTap,
+            child: Container(
+              height: 150,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6,
+                borderRadius: BorderRadius.circular(12),
+                image: imageUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(imageUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              child: imageUrl == null
+                  ? const Center(
+                      child: Icon(
+                        CupertinoIcons.camera,
+                        size: 40,
+                        color: CupertinoColors.systemGrey,
+                      ),
+                    )
+                  : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Edit Car Details'),
+      backgroundColor: CupertinoColors.systemGroupedBackground,
+      navigationBar: CupertinoNavigationBar(
+        middle: Text(widget.carId != null ? 'Edit Car Details' : 'Add New Car'),
+        backgroundColor: CupertinoColors.systemBackground.withOpacity(0.8),
+        border: null,
       ),
       child: SafeArea(
         child: SingleChildScrollView(
@@ -193,33 +241,368 @@ class _EditCarsState extends State<EditCars> {
             child: Form(
               key: _formKey,
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (var entry in _controllers.entries)
-                    CupertinoTextField(
-                      controller: entry.value,
-                      placeholder: entry.key,
+                  // Basic Information Section
+                  Material(
+                    color: Colors.transparent,
+                    child: const Text(
+                      'Basic Information',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  const SizedBox(height: 20),
-                  CupertinoButton.filled(
-                    child: const Text('Update Front Image'),
-                    onPressed: () => _pickImage((file) => _frontImage = file,
-                        (url) => _frontImageUrl = url),
                   ),
-                  CupertinoButton.filled(
-                    child: const Text('Update Back Image'),
-                    onPressed: () => _pickImage((file) => _backImage = file,
-                        (url) => _backImageUrl = url),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        CupertinoTextField(
+                          controller: _controllers['Car Brand'],
+                          placeholder: 'Car Brand',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['Model Name'],
+                          placeholder: 'Model Name',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['description'],
+                          placeholder: 'Description',
+                          maxLines: 3,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  CupertinoButton.filled(
-                    child: const Text('Update Side Image'),
-                    onPressed: () => _pickImage((file) => _sideImage = file,
-                        (url) => _sideImageUrl = url),
+                  const SizedBox(height: 24),
+
+                  // Pricing Section
+                  Material(
+                    color: Colors.transparent,
+                    child: const Text(
+                      'Pricing',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 20),
-                  CupertinoButton.filled(
-                    child: const Text('Submit'),
-                    onPressed: _uploadCarDetails,
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        CupertinoTextField(
+                          controller: _controllers['1MonthPrice'],
+                          placeholder: '1 Month Price',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['6MonthPrice'],
+                          placeholder: '6 Months Price',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['12MonthPrice'],
+                          placeholder: '12 Months Price',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // Technical Specifications Section
+                  Material(
+                    color: Colors.transparent,
+                    child: const Text(
+                      'Technical Specifications',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        CupertinoTextField(
+                          controller: _controllers['carType'],
+                          placeholder: 'Car Type',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['Color'],
+                          placeholder: 'Color',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['drive'],
+                          placeholder: 'Drive Type',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['Gearbox'],
+                          placeholder: 'Gearbox',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Performance Section
+                  Material(
+                    color: Colors.transparent,
+                    child: const Text(
+                      'Performance',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        CupertinoTextField(
+                          controller: _controllers['maxSpeed'],
+                          placeholder: 'Max Speed',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['power'],
+                          placeholder: 'Power (HP)',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['Motor'],
+                          placeholder: 'Motor',
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
+                          controller: _controllers['Speed (0-100)'],
+                          placeholder: '0-100 km/h Time',
+                          keyboardType: TextInputType.number,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Images Section
+                  Material(
+                    color: Colors.transparent,
+                    child: const Text(
+                      'Car Images',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: CupertinoColors.systemGrey.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Column(
+                        children: [
+                          _buildImageSection(
+                            'Front View',
+                            _frontImageUrl,
+                            () => _pickImage(
+                              (file) => _frontImage = file,
+                              (url) => _frontImageUrl = url,
+                            ),
+                          ),
+                          _buildImageSection(
+                            'Back View',
+                            _backImageUrl,
+                            () => _pickImage(
+                              (file) => _backImage = file,
+                              (url) => _backImageUrl = url,
+                            ),
+                          ),
+                          _buildImageSection(
+                            'Side View',
+                            _sideImageUrl,
+                            () => _pickImage(
+                              (file) => _sideImage = file,
+                              (url) => _sideImageUrl = url,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Submit Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: CupertinoButton.filled(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Text(
+                        widget.carId != null
+                            ? 'Update Car Details'
+                            : 'Add New Car',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      onPressed: _uploadCarDetails,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),

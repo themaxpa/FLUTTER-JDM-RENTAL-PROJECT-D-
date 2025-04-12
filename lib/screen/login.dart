@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/screen/unknown-screen.dart';
 import 'package:get/get.dart';
+import 'package:sensors_plus/sensors_plus.dart'; // For gyroscope effect
 import '../admin/home.dart';
 import '../user/showroom.dart';
 import '../screen/signup_page.dart';
@@ -24,11 +27,35 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isPasswordHidden = true;
 
+  // Variables for parallax effect
+  double _xOffset = 0.0;
+  double _yOffset = 0.0;
+  late StreamSubscription<GyroscopeEvent> _gyroscopeSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _startGyroscope();
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _gyroscopeSubscription.cancel(); // Cancel the gyroscope subscription
     super.dispose();
+  }
+
+  void _startGyroscope() {
+    _gyroscopeSubscription = gyroscopeEvents.listen((GyroscopeEvent event) {
+      if (mounted) {
+        // Check if the widget is still mounted
+        setState(() {
+          _xOffset = event.x * 5; // Reduced multiplier for lighter effect
+          _yOffset = event.y * 5; // Reduced multiplier for lighter effect
+        });
+      }
+    });
   }
 
   Future<void> _login() async {
@@ -126,95 +153,204 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      backgroundColor: Colors.grey[200],
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Image.asset("assets/images/SubaruLogo.png", height: 100),
-              const SizedBox(height: 20),
-              CupertinoTextField(
-                controller: _emailController,
-                placeholder: "Email",
-                keyboardType: TextInputType.emailAddress,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              const SizedBox(height: 16),
-              CupertinoTextField(
-                controller: _passwordController,
-                placeholder: "Password",
-                obscureText: _isPasswordHidden,
-                padding: const EdgeInsets.all(16),
-                suffix: GestureDetector(
-                  onTap: () =>
-                      setState(() => _isPasswordHidden = !_isPasswordHidden),
-                  child: Icon(
-                    _isPasswordHidden
-                        ? CupertinoIcons.eye_slash
-                        : CupertinoIcons.eye,
-                    color: CupertinoColors.systemGrey,
-                  ),
-                ),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () => Get.to(() => const ForgotPasswordPage()),
-                  child: Text(
-                    "Forgot Password?",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: CupertinoColors.activeBlue,
-                      fontSize: 13,
+    return Scaffold(
+      resizeToAvoidBottomInset: false, // Prevent resize when keyboard appears
+      body: Stack(
+        fit: StackFit.expand, // Make stack fill the entire screen
+        children: [
+          // Background Image with Light Parallax Effect
+          Positioned.fill(
+            child: OverflowBox(
+              maxWidth: MediaQuery.of(context).size.width * 1.2,
+              maxHeight: MediaQuery.of(context).size.height * 1.2,
+              alignment: Alignment.center,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                transform: Matrix4.translationValues(_xOffset, _yOffset, 0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width * 1.2,
+                  height: MediaQuery.of(context).size.height * 1.2,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage("assets/images/d.jpg"),
+                      fit: BoxFit.cover,
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              _isLoading
-                  ? const Center(child: CupertinoActivityIndicator())
-                  : CupertinoButton(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(12),
-                      onPressed: _login,
-                      child: const Text("Login",
-                          style: TextStyle(color: Colors.white)),
+            ),
+          ),
+
+          // Dark Overlay
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+
+          // Login Form
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 20.0,
+                  right: 20.0,
+                  top: 20.0,
+                  bottom: MediaQuery.of(context).viewInsets.bottom +
+                      20.0, // Adjust padding when keyboard appears
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Logo
+                    Image.asset(
+                      "assets/images/SubaruLogo.png",
+                      height: 100,
                     ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Don't have an account?",
-                      style: TextStyle(fontSize: 12)),
-                  GestureDetector(
-                    onTap: () => Get.off(() => const SignupScreen()),
-                    child: Text(
-                      " Signup here",
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: CupertinoColors.activeBlue,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 40),
+
+                    // Email Input Field
+                    TextField(
+                      controller: _emailController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        hintText: "Email",
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.7)),
+                        prefixIcon: Icon(Icons.email, color: Colors.white),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide:
+                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide:
+                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+
+                    // Password Input Field
+                    TextField(
+                      controller: _passwordController,
+                      style: const TextStyle(color: Colors.white),
+                      obscureText: _isPasswordHidden,
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.2),
+                        hintText: "Password",
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.7)),
+                        prefixIcon: Icon(Icons.lock, color: Colors.white),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordHidden
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => setState(
+                              () => _isPasswordHidden = !_isPasswordHidden),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide:
+                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide:
+                              BorderSide(color: Colors.white.withOpacity(0.3)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8), // More boxy
+                          borderSide: BorderSide(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Forgot Password Link
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () =>
+                            Get.to(() => const ForgotPasswordPage()),
+                        child: Text(
+                          "Forgot Password?",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Login Button
+                    _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : SizedBox(
+                            width: double.infinity, // Make button full width
+                            child: ElevatedButton(
+                              onPressed: _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 2,
+                              ),
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                    const SizedBox(height: 20),
+
+                    // Signup Link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Don't have an account?",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Get.off(() => const SignupScreen()),
+                          child: const Text(
+                            "Signup here",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

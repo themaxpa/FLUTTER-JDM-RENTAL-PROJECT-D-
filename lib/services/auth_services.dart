@@ -150,8 +150,12 @@ class AuthService {
     batch.set(
       _firestore.collection('users').doc(uid).collection('MyDocuments').doc(),
       {
-        'title': 'Initial Document',
+        'DLFrontSide': '',
+        'DLBackSide': '',
+        'PanCard': '',
         'timestamp': FieldValue.serverTimestamp(),
+        'AadhaarCardFront': '',
+        'AadhaarCardBack': '',
       },
     );
   }

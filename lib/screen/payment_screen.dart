@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pay/pay.dart';
@@ -18,18 +19,26 @@ class PaymentScreen extends StatelessWidget {
     required this.car,
     required this.pickupDate,
     required this.returnDate,
+    required TimeOfDay pickupTime,
   }) : super(key: key);
 
   Future<void> _storeBookingData(BuildContext context) async {
     try {
+      // Get current user ID
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
       await FirebaseFirestore.instance.collection('Booking').add({
         'amount': amount,
         'vendorName': vendorName,
         'car': car,
         'pickupDate': pickupDate.toIso8601String(),
         'returnDate': returnDate.toIso8601String(),
-        'status': 'Pending', // Default status before confirmation
+        'status': 'Pending',
         'createdAt': Timestamp.now(),
+        'userId': user.uid, // Store user ID with the booking
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
