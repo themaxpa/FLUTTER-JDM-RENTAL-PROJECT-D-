@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'carousel.dart';
 import 'login.dart';
 
@@ -18,7 +19,7 @@ class FullScreenBackground extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Image.asset(
-                      'assets/images/fiat_0.png',
+                      'assets/images/acura_0.png',
                       height: 80,
                     ),
                     SizedBox(height: 20),

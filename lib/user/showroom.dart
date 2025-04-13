@@ -1,9 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/user/book_car.dart'; // Only import from one location
 import 'package:flutter_app/user/user_profile.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../available_cars.dart';
 import '../screen/history.dart';
@@ -21,6 +21,20 @@ class _ShowroomState extends State<Showroom> {
       PersistentTabController(initialIndex: 0);
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
+  String selectedBrand = '';
+
+  final List<Map<String, String>> carBrands = [
+    {'name': 'Toyota', 'logo': 'assets/images/logo/ToyotaLogo.png'},
+    {'name': 'Nissan', 'logo': 'assets/images/logo/NissanLogo.png'},
+    {'name': 'Subaru', 'logo': 'assets/images/logo/SubaruLogo.png'},
+    {'name': 'Honda', 'logo': 'assets/images/logo/HondaLogo.png'},
+    {'name': 'Mazda', 'logo': 'assets/images/logo/MazdaLogo.png'},
+    {'name': 'Mitsubishi', 'logo': 'assets/images/logo/MitsubishiLogo.png'},
+    {'name': 'Suzuki', 'logo': 'assets/images/logo/SuzukiLogo.png'},
+    {'name': 'Mitsuoka', 'logo': 'assets/images/logo/MitsuokaLogo.png'},
+    {'name': 'Isuzu', 'logo': 'assets/images/logo/IsuzuLogo.png'},
+    {'name': 'hino', 'logo': 'assets/images/logo/HinoLogo.png'},
+  ];
 
   @override
   void dispose() {
@@ -74,6 +88,60 @@ class _ShowroomState extends State<Showroom> {
     );
   }
 
+  Widget _buildBrandSelector() {
+    return Container(
+      height: 70,
+      margin: const EdgeInsets.symmetric(vertical: 16),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: carBrands.length,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemBuilder: (context, index) {
+          final brand = carBrands[index];
+          final isSelected = selectedBrand == brand['name'];
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedBrand = isSelected ? '' : brand['name']!;
+                searchQuery = selectedBrand.toLowerCase();
+                _searchController.text = selectedBrand;
+              });
+            },
+            child: Container(
+              width: 70,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: CupertinoColors.systemGrey6.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected
+                      ? CupertinoColors.activeBlue
+                      : CupertinoColors.systemGrey4,
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: CupertinoColors.systemGrey.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(15),
+                child: Image.asset(
+                  brand['logo']!,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildShowroomContent() {
     return CupertinoPageScaffold(
       backgroundColor: CupertinoColors.systemGroupedBackground,
@@ -90,17 +158,21 @@ class _ShowroomState extends State<Showroom> {
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value.toLowerCase();
+                      if (value.isEmpty) {
+                        selectedBrand = '';
+                      }
                     });
                   },
                   onSuffixTap: () {
                     _searchController.clear();
                     setState(() {
                       searchQuery = '';
+                      selectedBrand = '';
                     });
                   },
                 ),
               ),
-              const SizedBox(height: 16),
+              _buildBrandSelector(),
               const Padding(
                 padding: EdgeInsets.all(16.0),
                 child: Text(

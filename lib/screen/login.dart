@@ -6,10 +6,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/screen/unknown-screen.dart';
 import 'package:get/get.dart';
 import 'package:sensors_plus/sensors_plus.dart'; // For gyroscope effect
+
 import '../admin/home.dart';
-import '../user/showroom.dart';
 import '../screen/signup_page.dart';
 import '../services/auth_services.dart';
+import '../user/showroom.dart';
 import '../vendor/vendor_home.dart';
 import 'forgot_password.dart';
 
@@ -202,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     // Logo
                     Image.asset(
-                      "assets/images/SubaruLogo.png",
+                      "assets/images/acura_0.png",
                       height: 100,
                     ),
                     const SizedBox(height: 40),

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pay/pay.dart';
+
 import '../card_payment.dart';
 
 class PaymentScreen extends StatelessWidget {
@@ -12,6 +13,12 @@ class PaymentScreen extends StatelessWidget {
   final DateTime pickupDate;
   final DateTime returnDate;
 
+  final dynamic returnTime;
+
+  final dynamic pickupTime;
+
+  // final TimeOfDay pickupTime;
+
   const PaymentScreen({
     Key? key,
     required this.amount,
@@ -19,7 +26,8 @@ class PaymentScreen extends StatelessWidget {
     required this.car,
     required this.pickupDate,
     required this.returnDate,
-    required TimeOfDay pickupTime,
+    this.pickupTime, // Make it nullable
+    this.returnTime,
   }) : super(key: key);
 
   Future<void> _storeBookingData(BuildContext context) async {
