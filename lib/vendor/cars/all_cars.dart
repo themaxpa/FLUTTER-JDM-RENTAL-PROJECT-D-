@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'more_car_details.dart';
+import '../../screen/more_car_details.dart';
 import 'edit_car_details.dart';
 
 class CreateAdScreen extends StatefulWidget {
@@ -242,13 +242,30 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
                         ),
                       ),
                       Spacer(),
-                      Text(
-                        carData['Car Brand']?.toString() ?? 'Brand',
-                        style: TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              carData['Car Brand']?.toString() ?? 'Brand',
+                              style: TextStyle(
+                                color: CupertinoColors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          // Brand logo
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: CupertinoColors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: _buildBrandLogo(
+                                carData['Car Brand']?.toString() ?? ''),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 4),
                       Text(
@@ -328,5 +345,47 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildBrandLogo(String brandName) {
+    // Map of brand names to their logo asset paths
+    final Map<String, String> brandLogos = {
+      'Toyota': 'assets/images/logo/ToyotaLogo.png',
+      'Nissan': 'assets/images/logo/NissanLogo.png',
+      'Subaru': 'assets/images/logo/SubaruLogo.png',
+      'Bugatti': 'assets/brands/bugatti.png',
+      'Cadillac': 'assets/brands/cadillac.png',
+      'Ferrari': 'assets/brands/ferrari.png',
+      'Lamborghini': 'assets/brands/lamborghini.png',
+      'Mercedes': 'assets/brands/mercedes.png',
+      'Porsche': 'assets/brands/porsche.png',
+      'Rolls Royce': 'assets/brands/rolls-royce.png',
+      // Add more brands as needed
+    };
+
+    // Get the logo path for the brand, or use a default icon if not found
+    final String? logoPath = brandLogos[brandName];
+
+    if (logoPath != null) {
+      return Padding(
+        padding: const EdgeInsets.all(4.0),
+        child: Image.asset(
+          logoPath,
+          fit: BoxFit.contain,
+          errorBuilder: (context, error, stackTrace) => const Icon(
+            CupertinoIcons.car_detailed,
+            color: CupertinoColors.white,
+            size: 16,
+          ),
+        ),
+      );
+    } else {
+      // Default icon if no logo is found
+      return const Icon(
+        CupertinoIcons.car_detailed,
+        color: CupertinoColors.white,
+        size: 16,
+      );
+    }
   }
 }

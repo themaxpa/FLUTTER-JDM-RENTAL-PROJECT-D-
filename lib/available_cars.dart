@@ -12,25 +12,6 @@ class AvailableCars extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: Colors.white.withOpacity(0.1),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-        ),
-        title: const Text(
-          'Available Cars',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
-        centerTitle: true,
-      ),
       body: buildAvailableCars(context),
     );
   }
@@ -132,11 +113,7 @@ Widget buildAvailableCars(BuildContext context) {
                     left: 16,
                     child: Row(
                       children: [
-                        Image.asset(
-                          'assets/images/logo/${carData['Car Brand']?.toLowerCase() ?? 'default'}Logo.png',
-                          height: 40,
-                          errorBuilder: (_, __, ___) => const SizedBox(),
-                        ),
+                        _buildBrandLogo(carData['Car Brand'] ?? ''),
                       ],
                     ),
                   ),
@@ -271,6 +248,41 @@ Widget _buildSpecItem(String label, String value) {
           ),
         ),
       ],
+    ),
+  );
+}
+
+Widget _buildBrandLogo(String brandName) {
+  if (brandName.isEmpty) {
+    return const Icon(
+      CupertinoIcons.car_detailed,
+      color: CupertinoColors.white,
+      size: 40,
+    );
+  }
+
+  // Construct the logo path using the format "Brand + Logo.png"
+  final String logoPath =
+      'assets/images/logo/${brandName.replaceAll(' ', '')}Logo.png';
+
+  return Container(
+    width: 80,
+    height: 80,
+    decoration: BoxDecoration(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Image.asset(
+        logoPath,
+        fit: BoxFit.contain,
+        errorBuilder: (context, error, stackTrace) => const Icon(
+          CupertinoIcons.car_detailed,
+          color: CupertinoColors.white,
+          size: 40,
+        ),
+      ),
     ),
   );
 }

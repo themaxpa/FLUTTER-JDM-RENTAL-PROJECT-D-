@@ -315,13 +315,14 @@ class _ShowroomState extends State<Showroom> {
 
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
+                  Navigator.of(context, rootNavigator: true).push(
                     CupertinoPageRoute(
-                      builder: (context) => CarBookingScreen(
-                        car: carData,
-                        carId: car.id,
-                        vendorId: carData['vendorId'],
+                      builder: (context) => CupertinoPageScaffold(
+                        child: CarBookingScreen(
+                          car: carData,
+                          carId: car.id,
+                          vendorId: carData['vendorId'],
+                        ),
                       ),
                     ),
                   );
