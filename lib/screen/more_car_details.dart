@@ -386,42 +386,33 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
   }
 
   Widget _buildBrandLogo(String brandName) {
-    // Map of brand names to their logo asset paths
-    final Map<String, String> brandLogos = {
-      'Toyota': 'assets/images/logo/ToyotaLogo.png',
-      'Nissan': 'assets/images/logo/NissanLogo.png',
-      'Subaru': 'assets/images/logo/SubaruLogo.png',
-      'Bugatti': 'assets/brands/bugatti.png',
-      'Cadillac': 'assets/brands/cadillac.png',
-      'Ferrari': 'assets/brands/ferrari.png',
-      'Lamborghini': 'assets/brands/lamborghini.png',
-      'Mercedes': 'assets/brands/mercedes.png',
-      'Porsche': 'assets/brands/porsche.png',
-      'Rolls Royce': 'assets/brands/rolls-royce.png',
-      // Add more brands as needed
-    };
+    if (brandName.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    // Get the logo path for the brand, or use a default icon if not found
-    final String? logoPath = brandLogos[brandName];
+    // Construct the logo path using the format "Brand + Logo.png"
+    final String logoPath =
+        'assets/images/logo/${brandName.replaceAll(' ', '')}Logo.png';
 
-    if (logoPath != null) {
-      return Padding(
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Image.asset(
           logoPath,
           fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) => const Icon(
             CupertinoIcons.car_detailed,
-            color: Colors.grey,
+            color: CupertinoColors.white,
+            size: 40,
           ),
         ),
-      );
-    } else {
-      // Default icon if no logo is found
-      return const Icon(
-        CupertinoIcons.car_detailed,
-        color: Colors.grey,
-      );
-    }
+      ),
+    );
   }
 }
