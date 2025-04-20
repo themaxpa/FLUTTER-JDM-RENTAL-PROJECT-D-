@@ -230,82 +230,85 @@ class _AllCarsScreenState extends State<AllCarsScreen> {
         },
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    carData['Model Name']?.toString() ?? 'Unknown Model',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+          child: Material(
+            color: Colors.transparent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      carData['Model Name']?.toString() ?? 'Unknown Model',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
-                  ),
-                  _buildDeleteButton(carRef),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (imageUrl.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    imageUrl,
-                    width: double.infinity,
-                    height: 150,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: double.infinity,
-                        height: 150,
-                        color: CupertinoColors.lightBackgroundGray,
-                        child:
-                            const Icon(CupertinoIcons.car_detailed, size: 40),
-                      );
-                    },
-                  ),
+                    _buildDeleteButton(carRef),
+                  ],
                 ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    carData['Car Brand']?.toString() ?? 'Unknown Brand',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                  Text(
-                    'AED $price / Day',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                const SizedBox(height: 12),
+                if (imageUrl.isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      imageUrl,
+                      width: double.infinity,
+                      height: 150,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: double.infinity,
+                          height: 150,
+                          color: CupertinoColors.lightBackgroundGray,
+                          child:
+                              const Icon(CupertinoIcons.car_detailed, size: 40),
+                        );
+                      },
                     ),
                   ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      carData['Car Brand']?.toString() ?? 'Unknown Brand',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    Text(
+                      'AED $price / Day',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'in process...',
+                  style: TextStyle(color: Colors.orange),
+                ),
+                if (isExpanded) ...[
+                  const SizedBox(height: 16),
+                  _buildDetailRow('Description', carData['description']),
+                  _buildDetailRow('Car Type', carData['carType']),
+                  _buildDetailRow('6 Month Price', carData['6MonthPrice']),
+                  _buildDetailRow('1 Month Price', carData['1MonthPrice']),
+                  _buildDetailRow('1 Day Price', carData['1DayPrice']),
+                  _buildDetailRow('Color', carData['Color']),
+                  _buildDetailRow('Drive', carData['drive']),
+                  _buildDetailRow('Max Speed', carData['maxSpeed']),
+                  _buildDetailRow('Power', carData['power']),
+                  _buildDetailRow('Gearbox', carData['Gearbox']),
+                  _buildDetailRow('Seats', carData['Seats']),
+                  _buildDetailRow('Motor', carData['Motor']),
+                  _buildDetailRow('Speed (0-100)', carData['Speed (0-100)']),
+                  _buildDetailRow('Location', carData['Location']),
                 ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'in process...',
-                style: TextStyle(color: Colors.orange),
-              ),
-              if (isExpanded) ...[
-                const SizedBox(height: 16),
-                _buildDetailRow('Description', carData['description']),
-                _buildDetailRow('Car Type', carData['carType']),
-                _buildDetailRow('6 Month Price', carData['6MonthPrice']),
-                _buildDetailRow('1 Month Price', carData['1MonthPrice']),
-                _buildDetailRow('1 Day Price', carData['1DayPrice']),
-                _buildDetailRow('Color', carData['Color']),
-                _buildDetailRow('Drive', carData['drive']),
-                _buildDetailRow('Max Speed', carData['maxSpeed']),
-                _buildDetailRow('Power', carData['power']),
-                _buildDetailRow('Gearbox', carData['Gearbox']),
-                _buildDetailRow('Seats', carData['Seats']),
-                _buildDetailRow('Motor', carData['Motor']),
-                _buildDetailRow('Speed (0-100)', carData['Speed (0-100)']),
-                _buildDetailRow('Location', carData['Location']),
               ],
-            ],
+            ),
           ),
         ),
       ),

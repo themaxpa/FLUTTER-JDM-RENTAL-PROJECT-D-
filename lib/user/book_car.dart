@@ -32,6 +32,12 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
   DateTime? returnDate;
   TimeOfDay? pickupTime;
   TimeOfDay? returnTime;
+  final List<TimeOfDay> availableTimeOptions = [
+    const TimeOfDay(hour: 10, minute: 0), // 10AM
+    const TimeOfDay(hour: 14, minute: 0), // 2PM
+    const TimeOfDay(hour: 16, minute: 0), // 4PM
+    const TimeOfDay(hour: 18, minute: 0), // 6PM
+  ];
   String selectedPlan = '1 Day';
   num selectedPrice = 0;
   bool isDescriptionExpanded = false;
@@ -108,6 +114,60 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
         _carLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
       });
     }
+  }
+
+  String _formatTimeOfDay(TimeOfDay tod) {
+    final now = DateTime.now();
+    final dt = DateTime(now.year, now.month, now.day, tod.hour, tod.minute);
+    final format = DateFormat.jm(); // Use 'jm' for 12-hour format with AM/PM
+    return format.format(dt);
+  }
+
+  void _showTimeOptions(String fieldLabel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Select $fieldLabel Time',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...availableTimeOptions.map((time) {
+                return ListTile(
+                  title: Text(
+                    _formatTimeOfDay(time),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      if (fieldLabel == 'Pickup') {
+                        pickupTime = time;
+                        // Set return time to pickup time if it's null
+                        returnTime ??= time;
+                      } else {
+                        returnTime = time;
+                      }
+                    });
+                  },
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _showMoreInfo() {
@@ -497,6 +557,7 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
     }
 
     // If all documents are uploaded with values, proceed to payment screen
+    // In your _handleRentNow method, modify the Navigator.push call:
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -506,6 +567,8 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
           car: widget.car,
           pickupDate: pickupDate!,
           returnDate: returnDate!,
+          pickupTime: _formatTimeOfDay(pickupTime!),
+          returnTime: _formatTimeOfDay(returnTime!),
         ),
       ),
     );
@@ -717,6 +780,8 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
                                     setState(() {
                                       pickupDate = date;
                                       _calculateReturnDate();
+                                      // Set default pickup time if not set
+                                      pickupTime ??= availableTimeOptions.first;
                                     });
                                   }
                                 },
@@ -725,20 +790,9 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildTimeField(
-                                'Pickup Time',
+                                'Pickup',
                                 pickupTime,
-                                () async {
-                                  final time = await showTimePicker(
-                                    context: context,
-                                    initialTime: TimeOfDay.now(),
-                                  );
-                                  if (time != null) {
-                                    setState(() {
-                                      pickupTime = time;
-                                      returnTime = time;
-                                    });
-                                  }
-                                },
+                                () => _showTimeOptions('Pickup'),
                               ),
                             ),
                           ],
@@ -750,15 +804,17 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
                               child: _buildDateField(
                                 'Return Date',
                                 returnDate,
-                                null,
+                                null, // Disable tap as it's calculated automatically
                               ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: _buildTimeField(
-                                'Return Time',
+                                'Return',
                                 returnTime,
-                                null,
+                                pickupDate != null
+                                    ? () => _showTimeOptions('Return')
+                                    : null,
                               ),
                             ),
                           ],
@@ -928,7 +984,7 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
 
   Widget _buildTimeField(String label, TimeOfDay? value, VoidCallback? onTap) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap != null ? () => _showTimeOptions(label) : null,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -945,7 +1001,7 @@ class _CarBookingScreenState extends State<CarBookingScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              value != null ? value.format(context) : 'Select Time',
+              value != null ? _formatTimeOfDay(value) : 'Select Time',
               style: TextStyle(
                 color: onTap != null ? Colors.white : Colors.white70,
               ),

@@ -23,6 +23,13 @@ class _ShowroomState extends State<Showroom> {
   String searchQuery = '';
   String selectedBrand = '';
 
+  // Define your theme colors here
+  final Color backgroundColor =
+      CupertinoColors.systemGroupedBackground; // or Colors.black
+  final Color primaryTextColor = Colors.black; // or Colors.white
+  final Color secondaryTextColor = Colors.white70; // or Colors.grey
+  final Color buttonColor = Colors.red; // or any other color you prefer
+
   final List<Map<String, String>> carBrands = [
     {'name': 'Toyota', 'logo': 'assets/images/logo/ToyotaLogo.png'},
     {'name': 'Nissan', 'logo': 'assets/images/logo/NissanLogo.png'},
@@ -103,9 +110,17 @@ class _ShowroomState extends State<Showroom> {
           return GestureDetector(
             onTap: () {
               setState(() {
-                selectedBrand = isSelected ? '' : brand['name']!;
-                searchQuery = selectedBrand.toLowerCase();
-                _searchController.text = selectedBrand;
+                if (isSelected) {
+                  // If already selected, clear the selection
+                  selectedBrand = '';
+                  searchQuery = '';
+                  _searchController.clear();
+                } else {
+                  // If not selected, select this brand
+                  selectedBrand = brand['name']!;
+                  searchQuery = brand['name']!.toLowerCase();
+                  _searchController.text = brand['name']!;
+                }
               });
             },
             child: Container(
@@ -144,7 +159,7 @@ class _ShowroomState extends State<Showroom> {
 
   Widget _buildShowroomContent() {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: backgroundColor,
       child: SafeArea(
         child: SingleChildScrollView(
           child: Column(
@@ -155,6 +170,8 @@ class _ShowroomState extends State<Showroom> {
                 child: CupertinoSearchTextField(
                   controller: _searchController,
                   placeholder: 'Search by Model or Brand',
+                  style: TextStyle(color: primaryTextColor),
+                  placeholderStyle: TextStyle(color: secondaryTextColor),
                   onChanged: (value) {
                     setState(() {
                       searchQuery = value.toLowerCase();
@@ -217,21 +234,19 @@ class _ShowroomState extends State<Showroom> {
         );
       },
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 0),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
-          height: 100,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           decoration: BoxDecoration(
-            color: CupertinoColors.systemBlue,
+            color: buttonColor,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                children: const [
                   Text(
                     'Available Cars',
                     style: TextStyle(
@@ -250,17 +265,10 @@ class _ShowroomState extends State<Showroom> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  CupertinoIcons.right_chevron,
-                  color: CupertinoColors.systemBlue,
-                  size: 20,
-                ),
+              const Icon(
+                CupertinoIcons.right_chevron,
+                color: Colors.white,
+                size: 20,
               ),
             ],
           ),
@@ -271,7 +279,7 @@ class _ShowroomState extends State<Showroom> {
 
   Widget buildCarDetails() {
     return SizedBox(
-      height: 250,
+      height: 220,
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collectionGroup('CarDetails')
@@ -296,10 +304,21 @@ class _ShowroomState extends State<Showroom> {
             final carBrand = data['Car Brand']?.toString().toLowerCase() ?? '';
             final status = data['Status']?.toString().toLowerCase() ?? '';
 
-            if (status == 'pending') return false;
+            if (status == 'unavailable') return false;
 
-            return modelName.contains(searchQuery) ||
-                carBrand.contains(searchQuery);
+            // If a brand is selected, only show cars of that brand
+            if (selectedBrand.isNotEmpty) {
+              return carBrand == selectedBrand.toLowerCase();
+            }
+
+            // Otherwise, use the search query to filter cars
+            if (searchQuery.isNotEmpty) {
+              return modelName.contains(searchQuery) ||
+                  carBrand.contains(searchQuery);
+            }
+
+            // If no search or brand filter, show all cars
+            return true;
           }).toList();
 
           if (carDocs.isEmpty) {

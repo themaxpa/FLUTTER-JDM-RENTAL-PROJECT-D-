@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
 
 import 'package:flutter_app/screen/screen_splash.dart';
-import '../../user/my_documents.dart';
+import 'company_details.dart';
 
 class SellerProfile extends StatefulWidget {
   const SellerProfile({Key? key}) : super(key: key);
@@ -160,17 +160,20 @@ class _SellerProfileState extends State<SellerProfile> {
   }
 
   Widget _buildProfileInfo() {
-    return Column(
-      children: [
-        Text(
-          _userData?['name'] ?? 'N/A',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-        ),
-        Text(
-          _user?.email ?? 'N/A',
-          style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-        ),
-      ],
+    return Material(
+      color: Colors.transparent,
+      child: Column(
+        children: [
+          Text(
+            _userData?['name'] ?? 'N/A',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          Text(
+            _user?.email ?? 'N/A',
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
     );
   }
 
@@ -223,8 +226,8 @@ class _SellerProfileState extends State<SellerProfile> {
                   _buildMenuItem("Edit Profile", CupertinoIcons.pencil,
                       () => Get.to(() => const SellerUpdateProfileScreen())),
                   _buildMenuItem("Settings", CupertinoIcons.gear_alt, () {}),
-                  _buildMenuItem("My Documents", CupertinoIcons.doc_text, () {
-                    Get.to(() => MyDocumentsScreen());
+                  _buildMenuItem("My Company", CupertinoIcons.doc_text, () {
+                    Get.to(() => CompanyDocumentsScreen());
                   }),
                   _buildMenuItem("Support", CupertinoIcons.person_2_alt, () {}),
                   _buildMenuItem(

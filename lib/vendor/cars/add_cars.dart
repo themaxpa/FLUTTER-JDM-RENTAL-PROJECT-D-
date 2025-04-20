@@ -914,31 +914,34 @@ class _AddCarsState extends State<AddCars> with SingleTickerProviderStateMixin {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Row(
-                      children: [
-                        if (_selectedBrand != null) ...[
-                          Image.asset(
-                            _carBrands.firstWhere((brand) =>
-                                brand['name'] == _selectedBrand)['logo']!,
-                            height: 24,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                              CupertinoIcons.car_detailed,
-                              size: 24,
-                              color: CupertinoColors.systemGrey,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Row(
+                        children: [
+                          if (_selectedBrand != null) ...[
+                            Image.asset(
+                              _carBrands.firstWhere((brand) =>
+                                  brand['name'] == _selectedBrand)['logo']!,
+                              height: 24,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                CupertinoIcons.car_detailed,
+                                size: 24,
+                                color: CupertinoColors.systemGrey,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            _selectedBrand ?? "Select Car Brand",
+                            style: TextStyle(
+                              color: _selectedBrand == null
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.black,
                             ),
                           ),
-                          const SizedBox(width: 8),
                         ],
-                        Text(
-                          _selectedBrand ?? "Select Car Brand",
-                          style: TextStyle(
-                            color: _selectedBrand == null
-                                ? CupertinoColors.systemGrey
-                                : CupertinoColors.black,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                   const Icon(
@@ -958,94 +961,98 @@ class _AddCarsState extends State<AddCars> with SingleTickerProviderStateMixin {
   Widget _buildCarTypeField() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.car_detailed,
+                    color: CupertinoColors.activeBlue,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    "Car Type",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: CupertinoColors.darkBackgroundGray),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showCarTypeSelector,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemGrey6,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: CupertinoColors.systemGrey4),
                 ),
-                child: const Icon(
-                  CupertinoIcons.car_detailed,
-                  color: CupertinoColors.activeBlue,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  "Car Type",
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: CupertinoColors.darkBackgroundGray),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: _showCarTypeSelector,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: CupertinoColors.systemGrey4),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        if (_selectedCarType != null) ...[
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.white,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Image.asset(
-                              _carTypes.firstWhere((type) =>
-                                  type['name'] == _selectedCarType)['icon'],
-                              height: 20,
-                              width: 20,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(
-                                CupertinoIcons.car_detailed,
-                                size: 20,
-                                color: CupertinoColors.systemGrey,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          if (_selectedCarType != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: CupertinoColors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Image.asset(
+                                _carTypes.firstWhere((type) =>
+                                    type['name'] == _selectedCarType)['icon'],
+                                height: 20,
+                                width: 20,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(
+                                  CupertinoIcons.car_detailed,
+                                  size: 20,
+                                  color: CupertinoColors.systemGrey,
+                                ),
                               ),
                             ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            _selectedCarType ?? "Select Car Type",
+                            style: TextStyle(
+                              color: _selectedCarType == null
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.black,
+                            ),
                           ),
-                          const SizedBox(width: 8),
                         ],
-                        Text(
-                          _selectedCarType ?? "Select Car Type",
-                          style: TextStyle(
-                            color: _selectedCarType == null
-                                ? CupertinoColors.systemGrey
-                                : CupertinoColors.black,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    CupertinoIcons.chevron_down,
-                    color: CupertinoColors.systemGrey,
-                    size: 16,
-                  ),
-                ],
+                    const Icon(
+                      CupertinoIcons.chevron_down,
+                      color: CupertinoColors.systemGrey,
+                      size: 16,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1053,88 +1060,92 @@ class _AddCarsState extends State<AddCars> with SingleTickerProviderStateMixin {
   Widget _buildDriveTypeField() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemGrey6,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    CupertinoIcons.car_detailed,
+                    color: CupertinoColors.activeBlue,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    "Drive Type",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: CupertinoColors.darkBackgroundGray),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showDriveTypeSelector,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
                 decoration: BoxDecoration(
                   color: CupertinoColors.systemGrey6,
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: CupertinoColors.systemGrey4),
                 ),
-                child: const Icon(
-                  CupertinoIcons.car_detailed,
-                  color: CupertinoColors.activeBlue,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  "Drive Type",
-                  style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                      color: CupertinoColors.darkBackgroundGray),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: _showDriveTypeSelector,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-              decoration: BoxDecoration(
-                color: CupertinoColors.systemGrey6,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: CupertinoColors.systemGrey4),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        if (_selectedDriveType != null) ...[
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.white,
-                              borderRadius: BorderRadius.circular(8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          if (_selectedDriveType != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: CupertinoColors.white,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                _driveTypes.firstWhere((type) =>
+                                    type['name'] == _selectedDriveType)['icon'],
+                                size: 20,
+                                color: CupertinoColors.activeBlue,
+                              ),
                             ),
-                            child: Icon(
-                              _driveTypes.firstWhere((type) =>
-                                  type['name'] == _selectedDriveType)['icon'],
-                              size: 20,
-                              color: CupertinoColors.activeBlue,
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            _selectedDriveType ?? "Select Drive Type",
+                            style: TextStyle(
+                              color: _selectedDriveType == null
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.black,
                             ),
                           ),
-                          const SizedBox(width: 8),
                         ],
-                        Text(
-                          _selectedDriveType ?? "Select Drive Type",
-                          style: TextStyle(
-                            color: _selectedDriveType == null
-                                ? CupertinoColors.systemGrey
-                                : CupertinoColors.black,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    CupertinoIcons.chevron_down,
-                    color: CupertinoColors.systemGrey,
-                    size: 16,
-                  ),
-                ],
+                    const Icon(
+                      CupertinoIcons.chevron_down,
+                      color: CupertinoColors.systemGrey,
+                      size: 16,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1458,183 +1469,193 @@ class _AddCarsState extends State<AddCars> with SingleTickerProviderStateMixin {
                   position: _slideAnimation,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Basic Information Section
-                          _buildSectionHeader("Basic Information"),
-                          _buildBrandDropdown(),
-                          _buildTextField(
-                              "Model Name",
-                              _controllers["Model Name"]!,
-                              CupertinoIcons.car_detailed),
-                          _buildCarTypeField(),
-                          _buildDriveTypeField(),
-                          _buildTextField("Color", _controllers["Color"]!,
-                              CupertinoIcons.paintbrush),
-                          _buildTextField(
-                              "description",
-                              _controllers["description"]!,
-                              CupertinoIcons.doc_text),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Basic Information Section
+                            _buildSectionHeader("Basic Information"),
+                            _buildBrandDropdown(),
+                            _buildTextField(
+                                "Model Name",
+                                _controllers["Model Name"]!,
+                                CupertinoIcons.car_detailed),
+                            _buildCarTypeField(),
+                            _buildDriveTypeField(),
+                            _buildTextField("Color", _controllers["Color"]!,
+                                CupertinoIcons.paintbrush),
+                            _buildTextField(
+                                "description",
+                                _controllers["description"]!,
+                                CupertinoIcons.doc_text),
 
-                          // Pricing Section
-                          _buildSectionHeader("Pricing"),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                    "1Day",
-                                    _controllers["1DayPrice"]!,
-                                    CupertinoIcons.money_dollar),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "1Month",
-                                    _controllers["1MonthPrice"]!,
-                                    CupertinoIcons.money_dollar),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "6Month",
-                                    _controllers["6MonthPrice"]!,
-                                    CupertinoIcons.money_dollar),
-                              ),
-                            ],
-                          ),
+                            // Pricing Section
+                            _buildSectionHeader("Pricing"),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                      "1Day",
+                                      _controllers["1DayPrice"]!,
+                                      CupertinoIcons.money_dollar),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "1Month",
+                                      _controllers["1MonthPrice"]!,
+                                      CupertinoIcons.money_dollar),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "6Month",
+                                      _controllers["6MonthPrice"]!,
+                                      CupertinoIcons.money_dollar),
+                                ),
+                              ],
+                            ),
 
-                          // Technical Specifications
-                          _buildSectionHeader("Technical Specifications"),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                    "Gearbox",
-                                    _controllers["Gearbox"]!,
-                                    CupertinoIcons.gear),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "Motor",
-                                    _controllers["Motor"]!,
-                                    CupertinoIcons.gear),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                    "power",
-                                    _controllers["power"]!,
-                                    CupertinoIcons.gauge),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "maxSpeed",
-                                    _controllers["maxSpeed"]!,
-                                    CupertinoIcons.speedometer),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                    "Speed (0-100)",
-                                    _controllers["Speed (0-100)"]!,
-                                    CupertinoIcons.timer),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "Seats",
-                                    _controllers["Seats"]!,
-                                    CupertinoIcons.person_2),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _buildTextField(
-                                    "consumption",
-                                    _controllers["consumption"]!,
-                                    CupertinoIcons.gauge),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: _buildTextField(
-                                    "Location",
-                                    _controllers["Location"]!,
-                                    CupertinoIcons.location),
-                              ),
-                            ],
-                          ),
+                            // Technical Specifications
+                            _buildSectionHeader("Technical Specifications"),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                      "Gearbox",
+                                      _controllers["Gearbox"]!,
+                                      CupertinoIcons.gear),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "Motor",
+                                      _controllers["Motor"]!,
+                                      CupertinoIcons.gear),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                      "power",
+                                      _controllers["power"]!,
+                                      CupertinoIcons.gauge),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "maxSpeed",
+                                      _controllers["maxSpeed"]!,
+                                      CupertinoIcons.speedometer),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                      "Speed (0-100)",
+                                      _controllers["Speed (0-100)"]!,
+                                      CupertinoIcons.timer),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "Seats",
+                                      _controllers["Seats"]!,
+                                      CupertinoIcons.person_2),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildTextField(
+                                      "consumption",
+                                      _controllers["consumption"]!,
+                                      CupertinoIcons.gauge),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: _buildTextField(
+                                      "Location",
+                                      _controllers["Location"]!,
+                                      CupertinoIcons.location),
+                                ),
+                              ],
+                            ),
 
-                          // Car Images Section
-                          _buildSectionHeader("Car Images"),
-                          _buildImagePicker("Car Front View", _frontImage,
-                              (img) => _frontImage = img),
-                          _buildImagePicker("Car Back View", _backImage,
-                              (img) => _backImage = img),
-                          _buildImagePicker("Car Side View", _sideImage,
-                              (img) => _sideImage = img),
+                            // Car Images Section
+                            _buildSectionHeader("Car Images"),
+                            _buildImagePicker("Car Front View", _frontImage,
+                                (img) => _frontImage = img),
+                            _buildImagePicker("Car Back View", _backImage,
+                                (img) => _backImage = img),
+                            _buildImagePicker("Car Side View", _sideImage,
+                                (img) => _sideImage = img),
 
-                          // Interior Images Section
-                          _buildSectionHeader("Interior Images"),
-                          _buildImagePicker("Interior View 1", _interiorImage1,
-                              (img) => _interiorImage1 = img),
-                          _buildImagePicker("Interior View 2", _interiorImage2,
-                              (img) => _interiorImage2 = img),
-                          _buildImagePicker("Interior View 3", _interiorImage3,
-                              (img) => _interiorImage3 = img),
+                            // Interior Images Section
+                            _buildSectionHeader("Interior Images"),
+                            _buildImagePicker(
+                                "Interior View 1",
+                                _interiorImage1,
+                                (img) => _interiorImage1 = img),
+                            _buildImagePicker(
+                                "Interior View 2",
+                                _interiorImage2,
+                                (img) => _interiorImage2 = img),
+                            _buildImagePicker(
+                                "Interior View 3",
+                                _interiorImage3,
+                                (img) => _interiorImage3 = img),
 
-                          _buildLocationPicker(),
+                            _buildLocationPicker(),
 
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                          // Action Buttons
-                          Row(
-                            children: [
-                              Expanded(
-                                child: CupertinoButton(
-                                  color: CupertinoColors.systemGrey5,
-                                  borderRadius: BorderRadius.circular(8),
-                                  onPressed: _resetForm,
-                                  child: const Text(
-                                    "Reset",
-                                    style: TextStyle(
-                                      color: CupertinoColors.darkBackgroundGray,
-                                      fontWeight: FontWeight.w600,
+                            // Action Buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: CupertinoButton(
+                                    color: CupertinoColors.systemGrey5,
+                                    borderRadius: BorderRadius.circular(8),
+                                    onPressed: _resetForm,
+                                    child: const Text(
+                                      "Reset",
+                                      style: TextStyle(
+                                        color:
+                                            CupertinoColors.darkBackgroundGray,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: CupertinoButton(
-                                  color: CupertinoColors.activeBlue,
-                                  borderRadius: BorderRadius.circular(8),
-                                  onPressed: _uploadCarDetails,
-                                  child: const Text(
-                                    "Upload",
-                                    style: TextStyle(
-                                      color: CupertinoColors.white,
-                                      fontWeight: FontWeight.w600,
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: CupertinoButton(
+                                    color: CupertinoColors.activeBlue,
+                                    borderRadius: BorderRadius.circular(8),
+                                    onPressed: _uploadCarDetails,
+                                    child: const Text(
+                                      "Upload",
+                                      style: TextStyle(
+                                        color: CupertinoColors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                        ],
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                       ),
                     ),
                   ),

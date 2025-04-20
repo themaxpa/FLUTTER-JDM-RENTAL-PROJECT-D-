@@ -27,10 +27,16 @@ class _EditCarsState extends State<EditCars> {
   File? _frontImage;
   File? _backImage;
   File? _sideImage;
+  File? _interiorImage1;
+  File? _interiorImage2;
+  File? _interiorImage3;
 
   String? _frontImageUrl;
   String? _backImageUrl;
   String? _sideImageUrl;
+  String? _interiorImage1Url;
+  String? _interiorImage2Url;
+  String? _interiorImage3Url;
 
   final String cloudinaryUrl =
       'https://api.cloudinary.com/v1_1/dageosse2/image/upload';
@@ -49,7 +55,7 @@ class _EditCarsState extends State<EditCars> {
       "Car Brand",
       "description",
       "carType",
-      "12MonthPrice",
+      "1DayPrice",
       "6MonthPrice",
       "1MonthPrice",
       "Color",
@@ -60,7 +66,8 @@ class _EditCarsState extends State<EditCars> {
       "Seats",
       "Motor",
       "Speed (0-100)",
-      "Location"
+      "Location",
+      "consumption"
     ]) {
       _controllers[field] = TextEditingController();
     }
@@ -74,6 +81,9 @@ class _EditCarsState extends State<EditCars> {
       _frontImageUrl = widget.initialData!["frontImage"];
       _backImageUrl = widget.initialData!["backImage"];
       _sideImageUrl = widget.initialData!["sideImage"];
+      _interiorImage1Url = widget.initialData!["interiorImage1"];
+      _interiorImage2Url = widget.initialData!["interiorImage2"];
+      _interiorImage3Url = widget.initialData!["interiorImage3"];
     }
   }
 
@@ -123,6 +133,9 @@ class _EditCarsState extends State<EditCars> {
         "frontImage": _frontImageUrl,
         "backImage": _backImageUrl,
         "sideImage": _sideImageUrl,
+        "interiorImage1": _interiorImage1Url,
+        "interiorImage2": _interiorImage2Url,
+        "interiorImage3": _interiorImage3Url,
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
@@ -360,8 +373,8 @@ class _EditCarsState extends State<EditCars> {
                         ),
                         const SizedBox(height: 12),
                         CupertinoTextField(
-                          controller: _controllers['12MonthPrice'],
-                          placeholder: '12 Months Price',
+                          controller: _controllers['1DayPrice'],
+                          placeholder: '1 Day Price',
                           keyboardType: TextInputType.number,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -480,7 +493,6 @@ class _EditCarsState extends State<EditCars> {
                         CupertinoTextField(
                           controller: _controllers['maxSpeed'],
                           placeholder: 'Max Speed',
-                          keyboardType: TextInputType.number,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             border:
@@ -492,7 +504,6 @@ class _EditCarsState extends State<EditCars> {
                         CupertinoTextField(
                           controller: _controllers['power'],
                           placeholder: 'Power (HP)',
-                          keyboardType: TextInputType.number,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             border:
@@ -513,9 +524,21 @@ class _EditCarsState extends State<EditCars> {
                         ),
                         const SizedBox(height: 12),
                         CupertinoTextField(
+                          controller: _controllers['consumption'],
+                          placeholder: 'Fuel Consumption kmpl L/100km',
+                          keyboardType: TextInputType.text,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border:
+                                Border.all(color: CupertinoColors.systemGrey4),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        CupertinoTextField(
                           controller: _controllers['Speed (0-100)'],
                           placeholder: '0-100 km/h Time',
-                          keyboardType: TextInputType.number,
+                          keyboardType: TextInputType.text,
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             border:
@@ -579,6 +602,30 @@ class _EditCarsState extends State<EditCars> {
                             () => _pickImage(
                               (file) => _sideImage = file,
                               (url) => _sideImageUrl = url,
+                            ),
+                          ),
+                          _buildImageSection(
+                            'Other Image 1',
+                            _interiorImage1Url,
+                            () => _pickImage(
+                              (file) => _interiorImage1 = file,
+                              (url) => _interiorImage1Url = url,
+                            ),
+                          ),
+                          _buildImageSection(
+                            'Other Image 2',
+                            _interiorImage2Url,
+                            () => _pickImage(
+                              (file) => _interiorImage2 = file,
+                              (url) => _interiorImage2Url = url,
+                            ),
+                          ),
+                          _buildImageSection(
+                            'Other Image 3',
+                            _interiorImage3Url,
+                            () => _pickImage(
+                              (file) => _interiorImage3 = file,
+                              (url) => _interiorImage3Url = url,
                             ),
                           ),
                         ],

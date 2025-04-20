@@ -11,11 +11,9 @@ class PaymentScreen extends StatelessWidget {
   final String vendorName;
   final Map<String, dynamic> car;
   final DateTime pickupDate;
+  final String pickupTime;
   final DateTime returnDate;
-
-  final dynamic returnTime;
-
-  final dynamic pickupTime;
+  final String returnTime;
 
   // final TimeOfDay pickupTime;
 
@@ -26,8 +24,8 @@ class PaymentScreen extends StatelessWidget {
     required this.car,
     required this.pickupDate,
     required this.returnDate,
-    this.pickupTime, // Make it nullable
-    this.returnTime,
+    required this.pickupTime, // Make it nullable
+    required this.returnTime,
   }) : super(key: key);
 
   Future<void> _storeBookingData(BuildContext context) async {
@@ -164,8 +162,9 @@ class PaymentScreen extends StatelessWidget {
                         amount: amount,
                         vendorName: vendorName,
                         pickupDate: pickupDate.toIso8601String(),
-                        returnDate:
-                            returnDate.toIso8601String(), // Call after payment
+                        returnDate: returnDate.toIso8601String(),
+                        pickupTime: pickupTime,
+                        returnTime: returnTime, // Call after payment
                       ),
                     ),
                   );

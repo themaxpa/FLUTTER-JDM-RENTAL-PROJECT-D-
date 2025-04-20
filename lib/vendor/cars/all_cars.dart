@@ -74,43 +74,46 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
                   borderRadius: BorderRadius.circular(10),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: CupertinoSlidingSegmentedControl<bool>(
-                        thumbColor: CupertinoColors.activeBlue,
-                        backgroundColor: CupertinoColors.systemGrey6,
-                        children: {
-                          false: Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 16),
-                            child: Text(
-                              'All Cars',
-                              style: TextStyle(
-                                color: !showMyCars
-                                    ? CupertinoColors.white
-                                    : CupertinoColors.black,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: CupertinoSlidingSegmentedControl<bool>(
+                          thumbColor: CupertinoColors.activeBlue,
+                          backgroundColor: CupertinoColors.systemGrey6,
+                          children: {
+                            false: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
+                              child: Text(
+                                'All Cars',
+                                style: TextStyle(
+                                  color: !showMyCars
+                                      ? CupertinoColors.white
+                                      : CupertinoColors.black,
+                                ),
                               ),
                             ),
-                          ),
-                          true: Padding(
-                            padding: EdgeInsets.symmetric(
-                                vertical: 8, horizontal: 16),
-                            child: Text(
-                              'My Cars',
-                              style: TextStyle(
-                                color: showMyCars
-                                    ? CupertinoColors.white
-                                    : CupertinoColors.black,
+                            true: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  vertical: 8, horizontal: 16),
+                              child: Text(
+                                'My Cars',
+                                style: TextStyle(
+                                  color: showMyCars
+                                      ? CupertinoColors.white
+                                      : CupertinoColors.black,
+                                ),
                               ),
                             ),
-                          ),
-                        },
-                        groupValue: showMyCars,
-                        onValueChanged: (bool? value) {
-                          setState(() {
-                            showMyCars = value ?? false;
-                          });
-                        },
+                          },
+                          groupValue: showMyCars,
+                          onValueChanged: (bool? value) {
+                            setState(() {
+                              showMyCars = value ?? false;
+                            });
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -221,70 +224,73 @@ class _CreateAdScreenState extends State<CreateAdScreen> {
                 // Content
                 Padding(
                   padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Rental Type Badge
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.activeBlue.withOpacity(0.9),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          rentalType,
-                          style: TextStyle(
-                            color: CupertinoColors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Rental Type Badge
+                        Container(
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.activeBlue.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            rentalType,
+                            style: TextStyle(
+                              color: CupertinoColors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
-                      ),
-                      Spacer(),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              carData['Car Brand']?.toString() ?? 'Brand',
-                              style: TextStyle(
-                                color: CupertinoColors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                        Spacer(),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                carData['Car Brand']?.toString() ?? 'Brand',
+                                style: TextStyle(
+                                  color: CupertinoColors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                          // Brand logo
-                          Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: CupertinoColors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(6),
+                            // Brand logo
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: CupertinoColors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: _buildBrandLogo(
+                                  carData['Car Brand']?.toString() ?? ''),
                             ),
-                            child: _buildBrandLogo(
-                                carData['Car Brand']?.toString() ?? ''),
+                          ],
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          carData['Model Name']?.toString() ?? 'Model',
+                          style: TextStyle(
+                            color: CupertinoColors.white.withOpacity(0.9),
+                            fontSize: 14,
                           ),
-                        ],
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        carData['Model Name']?.toString() ?? 'Model',
-                        style: TextStyle(
-                          color: CupertinoColors.white.withOpacity(0.9),
-                          fontSize: 14,
                         ),
-                      ),
 
-                      SizedBox(height: 4),
-                      Text(
-                        'per ${rentalType.toLowerCase()}',
-                        style: TextStyle(
-                          color: CupertinoColors.white.withOpacity(0.7),
-                          fontSize: 12,
+                        SizedBox(height: 4),
+                        Text(
+                          'per ${rentalType.toLowerCase()}',
+                          style: TextStyle(
+                            color: CupertinoColors.white.withOpacity(0.7),
+                            fontSize: 12,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 // Edit/Delete Buttons for owner

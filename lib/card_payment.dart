@@ -10,6 +10,8 @@ class CardPaymentScreen extends StatefulWidget {
   final String pickupDate;
   final String returnDate;
   final Map<String, dynamic> car;
+  final String pickupTime;
+  final String returnTime;
 
   const CardPaymentScreen({
     Key? key,
@@ -18,6 +20,8 @@ class CardPaymentScreen extends StatefulWidget {
     required this.car,
     required this.pickupDate,
     required this.returnDate,
+    required this.pickupTime,
+    required this.returnTime,
   }) : super(key: key);
 
   @override
@@ -78,11 +82,11 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         "cvv": cvvController.text.trim(),
         "expiryDate": expiryDateController.text.trim(),
         "timestamp": FieldValue.serverTimestamp(),
-        "carDetails": widget.car,
+        "carDetails": {...widget.car, "Status": "Pending"},
         "Status": 'Paid',
         "pickupDate": widget.pickupDate,
         "returnDate": widget.returnDate,
-        "vendorId": widget.car["vendorId"], // Ensure vendorId is included
+        "vendorId": widget.car["vendorId"],
       });
 
       // Verify car data exists before updating
@@ -91,7 +95,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         throw Exception("Missing carId or vendorId in car details");
       }
 
-      // Then update car status with proper error handling
+      //  update car status with proper error handling
       final carRef = FirebaseFirestore.instance
           .collection("vendors")
           .doc(widget.car["vendorId"])
@@ -105,7 +109,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
       }
 
       // Then update the status
-      await carRef.update({"Status": "Pending"});
+      await carRef.update({"Status": "unavailable"});
 
       // Only show success if everything completed
       await _showSuccessDialog(context);
