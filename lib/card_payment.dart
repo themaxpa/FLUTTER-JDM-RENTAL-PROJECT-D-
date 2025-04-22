@@ -37,16 +37,26 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   bool isCardValid = false;
   DocumentReference? bookingRef;
 
+  final FocusNode _cardNumberFocusNode = FocusNode();
+  final FocusNode _expiryDateFocusNode = FocusNode();
+  final FocusNode _cvvFocusNode = FocusNode();
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
+    // Add listeners to validate card when fields change
     cardNumberController.addListener(_validateCard);
+    cvvController.addListener(_validateCard);
+    expiryDateController.addListener(_validateCard);
   }
 
   @override
   void dispose() {
+    _cardNumberFocusNode.dispose();
+    _expiryDateFocusNode.dispose();
+    _cvvFocusNode.dispose();
     cardNumberController.dispose();
     expiryDateController.dispose();
     cvvController.dispose();
@@ -54,11 +64,18 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   }
 
   void _validateCard() {
-    setState(() {
-      isCardValid = cardNumberController.text.length == 16 &&
-          cvvController.text.length == 3 &&
-          selectedExpiryDate != null;
-    });
+    final isValid = cardNumberController.text.length == 16 &&
+        cvvController.text.length == 3 &&
+        selectedExpiryDate != null &&
+        (selectedExpiryDate!.isAfter(DateTime.now()) ||
+            DateFormat('MM/yy').format(selectedExpiryDate!) ==
+                DateFormat('MM/yy').format(DateTime.now()));
+
+    if (isCardValid != isValid) {
+      setState(() {
+        isCardValid = isValid;
+      });
+    }
   }
 
   Future<void> _storeBooking(BuildContext context) async {
@@ -78,15 +95,18 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         "userId": user.uid,
         "vendorName": widget.vendorName,
         "amount": widget.amount,
-        "cardNumber": cardNumberController.text.trim(),
-        "cvv": cvvController.text.trim(),
-        "expiryDate": expiryDateController.text.trim(),
+        "cardLast4": cardNumberController.text.trim().substring(12),
+        // Only store last 4 digits for security
         "timestamp": FieldValue.serverTimestamp(),
-        "carDetails": {...widget.car, "Status": "Pending"},
-        "Status": 'Paid',
+        "carDetails": {...widget.car, "Status": "unavailable"},
+        "status": 'Paid',
+        // Changed to lowercase to match Firestore conventions
         "pickupDate": widget.pickupDate,
         "returnDate": widget.returnDate,
+        "pickupTime": widget.pickupTime,
+        "returnTime": widget.returnTime,
         "vendorId": widget.car["vendorId"],
+        "expiryDate": expiryDateController.text.trim(),
       });
 
       // Verify car data exists before updating
@@ -95,23 +115,15 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         throw Exception("Missing carId or vendorId in car details");
       }
 
-      //  update car status with proper error handling
+      // Update car status
       final carRef = FirebaseFirestore.instance
           .collection("vendors")
           .doc(widget.car["vendorId"])
           .collection("CarDetails")
           .doc(widget.car["carId"]);
 
-      // First check if document exists
-      final doc = await carRef.get();
-      if (!doc.exists) {
-        throw Exception("Car document does not exist");
-      }
-
-      // Then update the status
       await carRef.update({"Status": "unavailable"});
 
-      // Only show success if everything completed
       await _showSuccessDialog(context);
     } on FirebaseException catch (e) {
       debugPrint("Firestore error: ${e.code} - ${e.message}");
@@ -126,14 +138,10 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
         debugPrint("Failed to delete booking: $deleteError");
       }
 
-      if (e.code == 'permission-denied') {
-        _showDialog(context, "Permission Denied",
-            "You don't have permission to update this car's status. Please contact support.");
-      } else {
-        _showDialog(context, "Error", "Payment Failed: ${e.message}");
-      }
+      _showDialog(
+          context, "Error", "Payment Failed: ${e.message ?? 'Unknown error'}");
     } catch (e) {
-      debugPrint("Payment failed error: ${e.toString()}");
+      debugPrint("Payment failed error: $e");
       _showDialog(
           context, "Error", "An unexpected error occurred. Please try again.");
     } finally {
@@ -144,44 +152,39 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
   }
 
   Future<void> _showSuccessDialog(BuildContext context) async {
-    try {
-      await showCupertinoDialog(
-        context: context,
-        builder: (_) => CupertinoAlertDialog(
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(CupertinoIcons.checkmark_circle_fill,
-                  color: CupertinoColors.activeGreen),
-              SizedBox(width: 8),
-              Text("Payment Successful"),
-            ],
-          ),
-          content: Column(
-            children: [
-              SizedBox(height: 16),
-              Text("Your booking has been confirmed"),
-              SizedBox(height: 8),
-              Text("Amount: ₹${widget.amount}",
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: Text("Done"),
-              onPressed: () {
-                Navigator.of(context)
-                  ..pop() // Pop the dialog
-                  ..pop(); // Pop the payment screen
-              },
-            ),
+    return showCupertinoDialog(
+      context: context,
+      builder: (_) => CupertinoAlertDialog(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(CupertinoIcons.checkmark_circle_fill,
+                color: CupertinoColors.activeGreen),
+            SizedBox(width: 8),
+            Text("Payment Successful"),
           ],
         ),
-      );
-    } catch (e) {
-      debugPrint("Error showing success dialog: $e");
-      if (mounted) Navigator.of(context).pop();
-    }
+        content: Column(
+          children: [
+            SizedBox(height: 16),
+            Text("Your booking has been confirmed"),
+            SizedBox(height: 8),
+            Text("Amount: ₹${widget.amount}",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: Text("Done"),
+            onPressed: () {
+              Navigator.of(context)
+                ..pop() // Pop the dialog
+                ..pop(); // Pop the payment screen
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _showDialog(BuildContext context, String title, String message) {
@@ -209,9 +212,11 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
           CupertinoSliverNavigationBar(
             largeTitle: Text('Payment'),
             backgroundColor: CupertinoColors.systemBackground.withOpacity(0.8),
+            previousPageTitle: 'Back',
           ),
           SliverToBoxAdapter(
             child: SafeArea(
+              top: false,
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Form(
@@ -223,6 +228,10 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                       Container(
                         width: double.infinity,
                         padding: EdgeInsets.symmetric(vertical: 24),
+                        decoration: BoxDecoration(
+                          color: CupertinoColors.systemBackground,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         child: Material(
                           color: Colors.transparent,
                           child: Column(
@@ -253,7 +262,7 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                       // Card Details Section
                       Container(
                         decoration: BoxDecoration(
-                          color: CupertinoColors.white,
+                          color: CupertinoColors.systemBackground,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [
                             BoxShadow(
@@ -273,6 +282,16 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                               maxLength: 16,
                               prefix: Icon(CupertinoIcons.creditcard,
                                   color: CupertinoColors.systemGrey),
+                              focusNode: _cardNumberFocusNode,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter card number';
+                                }
+                                if (value.length != 16) {
+                                  return 'Card number must be 16 digits';
+                                }
+                                return null;
+                              },
                             ),
                             Divider(height: 1),
                             Row(
@@ -283,6 +302,13 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                                     placeholder: "MM/YY",
                                     readOnly: true,
                                     onTap: _showExpiryDatePicker,
+                                    focusNode: _expiryDateFocusNode,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please select expiry date';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                                 Container(
@@ -297,6 +323,16 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                                     obscureText: true,
                                     keyboardType: TextInputType.number,
                                     maxLength: 3,
+                                    focusNode: _cvvFocusNode,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Please enter CVV';
+                                      }
+                                      if (value.length != 3) {
+                                        return 'CVV must be 3 digits';
+                                      }
+                                      return null;
+                                    },
                                   ),
                                 ),
                               ],
@@ -308,17 +344,15 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
                       SizedBox(height: 32),
 
                       // Pay Button
-                      Container(
+                      SizedBox(
                         width: double.infinity,
-                        height: 50,
                         child: CupertinoButton(
-                          padding: EdgeInsets.zero,
                           color: isCardValid
-                              ? CupertinoColors.activeBlue
+                              ? CupertinoColors.systemBlue
                               : CupertinoColors.systemGrey3,
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(12),
                           onPressed: isCardValid && !isLoading
-                              ? () => _validateAndPay(context)
+                              ? () => _storeBooking(context)
                               : null,
                           child: isLoading
                               ? CupertinoActivityIndicator(
@@ -360,124 +394,100 @@ class _CardPaymentScreenState extends State<CardPaymentScreen> {
     Widget? prefix,
     bool readOnly = false,
     VoidCallback? onTap,
+    FocusNode? focusNode,
+    String? Function(String?)? validator,
   }) {
-    return CupertinoTextField(
-      controller: controller,
-      placeholder: placeholder,
-      obscureText: obscureText,
-      keyboardType: keyboardType,
-      maxLength: maxLength,
-      prefix: prefix != null
-          ? Padding(
-              padding: EdgeInsets.only(left: 12),
-              child: prefix,
-            )
-          : null,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: CupertinoColors.white,
-        border: null,
-      ),
-      readOnly: readOnly,
-      onTap: onTap,
-      style: TextStyle(fontSize: 16),
-      placeholderStyle: TextStyle(
-        color: CupertinoColors.systemGrey,
-        fontSize: 16,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: CupertinoTextFormFieldRow(
+        controller: controller,
+        focusNode: focusNode,
+        placeholder: placeholder,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        maxLength: maxLength,
+        prefix: prefix,
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: CupertinoColors.systemBackground,
+        ),
+        readOnly: readOnly,
+        onTap: onTap,
+        style: TextStyle(fontSize: 16),
+        placeholderStyle: TextStyle(
+          color: CupertinoColors.systemGrey,
+          fontSize: 16,
+        ),
+        validator: validator,
+        onChanged: (value) => _validateCard(),
       ),
     );
   }
 
   void _showExpiryDatePicker() {
     final now = DateTime.now();
-    final initialDate = now.add(const Duration(milliseconds: 1));
-    DateTime? tempSelectedDate = initialDate;
+    final initialDate = DateTime(now.year, now.month + 1); // Next month
 
     showCupertinoModalPopup(
       context: context,
       builder: (BuildContext context) {
-        return WillPopScope(
-          onWillPop: () async => false,
-          child: Container(
-            height: 300,
-            color: CupertinoColors.systemBackground,
-            child: Column(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: CupertinoColors.systemGrey6,
-                    border: const Border(
-                      bottom: BorderSide(
-                        color: CupertinoColors.systemGrey5,
-                        width: 0.5,
-                      ),
+        return Container(
+          height: 300,
+          color: CupertinoColors.systemBackground,
+          child: Column(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemGrey6,
+                  border: const Border(
+                    bottom: BorderSide(
+                      color: CupertinoColors.systemGrey5,
+                      width: 0.5,
                     ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        child: const Text("Cancel"),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      CupertinoButton(
-                        padding: EdgeInsets.zero,
-                        child: const Text("Done"),
-                        onPressed: () {
-                          if (tempSelectedDate != null) {
-                            setState(() {
-                              selectedExpiryDate = tempSelectedDate;
-                              expiryDateController.text = DateFormat('MM/yy')
-                                  .format(selectedExpiryDate!);
-                              _validateCard();
-                            });
-                            Navigator.pop(context);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
                 ),
-                Expanded(
-                  child: CupertinoDatePicker(
-                    mode: CupertinoDatePickerMode.date,
-                    initialDateTime: initialDate,
-                    minimumDate: now,
-                    maximumDate: now.add(const Duration(days: 3650)),
-                    onDateTimeChanged: (DateTime date) {
-                      tempSelectedDate = date;
-                    },
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Text("Cancel"),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      child: const Text("Done"),
+                      onPressed: () {
+                        if (selectedExpiryDate != null) {
+                          setState(() {
+                            expiryDateController.text =
+                                DateFormat('MM/yy').format(selectedExpiryDate!);
+                            _validateCard();
+                          });
+                          Navigator.pop(context);
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: CupertinoDatePickerMode.date,
+                  initialDateTime: initialDate,
+                  minimumDate: now,
+                  maximumDate: DateTime(now.year + 10),
+                  onDateTimeChanged: (DateTime date) {
+                    selectedExpiryDate = date;
+                  },
+                ),
+              ),
+            ],
           ),
         );
       },
     );
-  }
-
-  void _validateAndPay(BuildContext context) {
-    if (cardNumberController.text.trim().length != 16) {
-      _showDialog(
-          context, "Error", "Please enter a valid 16-digit card number");
-      return;
-    }
-
-    if (cvvController.text.trim().length != 3) {
-      _showDialog(context, "Error", "Please enter a valid 3-digit CVV");
-      return;
-    }
-
-    if (selectedExpiryDate == null ||
-        selectedExpiryDate!.isBefore(DateTime.now())) {
-      _showDialog(context, "Error", "Please select a valid future expiry date");
-      return;
-    }
-
-    _storeBooking(context);
   }
 }

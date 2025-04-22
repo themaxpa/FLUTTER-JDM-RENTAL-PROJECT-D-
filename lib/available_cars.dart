@@ -86,8 +86,11 @@ Widget buildAvailableCars(BuildContext context) {
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             color: Colors.grey[900],
-                            child: const Icon(CupertinoIcons.car_detailed,
-                                size: 100, color: Colors.white54),
+                            child: const Icon(
+                              CupertinoIcons.car_detailed,
+                              size: 100,
+                              color: Colors.white54,
+                            ),
                           ),
                         ),
                         Container(
@@ -118,28 +121,42 @@ Widget buildAvailableCars(BuildContext context) {
                     ),
                   ),
 
-                  // Car Details
+                  // Car Specifications
                   Positioned(
                     right: 16,
                     top: 16,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        _buildSpecItem('Mileage (upto)',
-                            '${carData['mileage'] ?? '7.69'} kmpl'),
-                        const SizedBox(height: 12),
-                        _buildSpecItem('Engine (upto)',
-                            '${carData['engine'] ?? '6498'} cc'),
-                        const SizedBox(height: 12),
-                        _buildSpecItem('BHP', '${carData['power'] ?? '770.0'}'),
+                        _buildSpecItem(
+                          'Mileage (upto)',
+                          '${carData['mileage'] ?? '7.69'} kmpl',
+                        ),
                         const SizedBox(height: 12),
                         _buildSpecItem(
-                            'Transmission', carData['Gearbox'] ?? 'Automatic'),
+                          'Engine (upto)',
+                          '${carData['engine'] ?? '6498'} cc',
+                        ),
                         const SizedBox(height: 12),
-                        _buildSpecItem('Seats', '${carData['Seats'] ?? '2'}'),
+                        _buildSpecItem(
+                          'BHP',
+                          '${carData['power'] ?? '770.0'}',
+                        ),
                         const SizedBox(height: 12),
-                        _buildSpecItem('Boot Space',
-                            '${carData['bootSpace'] ?? '110'}-liters'),
+                        _buildSpecItem(
+                          'Transmission',
+                          carData['Gearbox'] ?? 'Automatic',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSpecItem(
+                          'Seats',
+                          '${carData['Seats'] ?? '2'}',
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSpecItem(
+                          'Boot Space',
+                          '${carData['bootSpace'] ?? '110'}-liters',
+                        ),
                       ],
                     ),
                   ),
@@ -152,8 +169,28 @@ Widget buildAvailableCars(BuildContext context) {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Location with Icon
+                        Row(
+                          children: [
+                            const Icon(
+                              CupertinoIcons.location_solid,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              carData['Location'] ?? 'Location not specified',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+
                         Text(
-                          'NEED A LUXURY CAR ?',
+                          'NEED A JDM CAR ?',
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.7),
                             fontSize: 14,
@@ -182,7 +219,9 @@ Widget buildAvailableCars(BuildContext context) {
                             ),
                             CupertinoButton(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               onPressed: () {

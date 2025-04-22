@@ -13,11 +13,23 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
   Map<String, bool> expandedCards = {};
   List<DocumentSnapshot> allUsers = [];
   List<DocumentSnapshot> displayedUsers = [];
+  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
     fetchUsers();
+    _updateBrightness();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
+      _updateBrightness();
+    };
+  }
+
+  void _updateBrightness() {
+    setState(() {
+      _isDarkMode =
+          WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+    });
   }
 
   Future<void> fetchUsers() async {
@@ -100,7 +112,6 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
     );
   }
 
-  // Helper method to safely get data from document
   dynamic getDocumentData(DocumentSnapshot doc, String field) {
     return doc.data() != null && (doc.data() as Map).containsKey(field)
         ? doc[field]
@@ -114,16 +125,27 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
     double padding = screenWidth * 0.05;
 
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: _isDarkMode
+          ? CupertinoColors.black
+          : CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
-        middle: Text('LoginInfo'),
-        backgroundColor: CupertinoColors.systemBackground,
+        middle: Text(
+          'LoginInfo',
+          style: TextStyle(
+            color: _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+          ),
+        ),
+        backgroundColor: _isDarkMode
+            ? CupertinoColors.darkBackgroundGray
+            : CupertinoColors.systemBackground,
       ),
       child: SafeArea(
         child: Column(
           children: [
             Material(
-              color: CupertinoColors.systemGroupedBackground,
+              color: _isDarkMode
+                  ? CupertinoColors.black
+                  : CupertinoColors.systemGroupedBackground,
               child: Padding(
                 padding: EdgeInsets.all(padding),
                 child: CupertinoSlidingSegmentedControl<String>(
@@ -131,20 +153,36 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                   onValueChanged: (String? value) {
                     if (value != null) filterUsers(value);
                   },
-                  backgroundColor: CupertinoColors.systemGrey5,
-                  thumbColor: CupertinoColors.white,
+                  backgroundColor: _isDarkMode
+                      ? CupertinoColors.darkBackgroundGray
+                      : CupertinoColors.systemGrey5,
+                  thumbColor: _isDarkMode
+                      ? CupertinoColors.darkBackgroundGray
+                      : CupertinoColors.white,
                   children: {
                     'all': Text(
                       'All',
-                      style: TextStyle(color: CupertinoColors.black),
+                      style: TextStyle(
+                        color: _isDarkMode
+                            ? CupertinoColors.white
+                            : CupertinoColors.black,
+                      ),
                     ),
                     'users': Text(
                       'Users',
-                      style: TextStyle(color: CupertinoColors.black),
+                      style: TextStyle(
+                        color: _isDarkMode
+                            ? CupertinoColors.white
+                            : CupertinoColors.black,
+                      ),
                     ),
                     'vendors': Text(
                       'Vendors',
-                      style: TextStyle(color: CupertinoColors.black),
+                      style: TextStyle(
+                        color: _isDarkMode
+                            ? CupertinoColors.white
+                            : CupertinoColors.black,
+                      ),
                     ),
                   },
                 ),
@@ -152,9 +190,24 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
             ),
             Expanded(
               child: isLoading
-                  ? Center(child: CupertinoActivityIndicator())
+                  ? Center(
+                      child: CupertinoActivityIndicator(
+                        color: _isDarkMode
+                            ? CupertinoColors.white
+                            : CupertinoColors.black,
+                      ),
+                    )
                   : displayedUsers.isEmpty
-                      ? Center(child: Text('No users found'))
+                      ? Center(
+                          child: Text(
+                            'No users found',
+                            style: TextStyle(
+                              color: _isDarkMode
+                                  ? CupertinoColors.white
+                                  : CupertinoColors.black,
+                            ),
+                          ),
+                        )
                       : CupertinoScrollbar(
                           child: ListView.builder(
                             itemCount: displayedUsers.length,
@@ -177,11 +230,16 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                       horizontal: padding, vertical: 8),
                                   padding: EdgeInsets.all(padding),
                                   decoration: BoxDecoration(
-                                    color: CupertinoColors.white,
+                                    color: _isDarkMode
+                                        ? CupertinoColors.darkBackgroundGray
+                                        : CupertinoColors.white,
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: CupertinoColors.systemGrey2,
+                                        color: _isDarkMode
+                                            ? CupertinoColors.black
+                                                .withOpacity(0.3)
+                                            : CupertinoColors.systemGrey2,
                                         blurRadius: 5,
                                         spreadRadius: 2,
                                       ),
@@ -234,6 +292,11 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                                       fontSize: 18,
                                                       fontWeight:
                                                           FontWeight.bold,
+                                                      color: _isDarkMode
+                                                          ? CupertinoColors
+                                                              .white
+                                                          : CupertinoColors
+                                                              .black,
                                                     ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -247,8 +310,11 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                                     email,
                                                     style: TextStyle(
                                                       fontSize: 14,
-                                                      color: CupertinoColors
-                                                          .systemGrey,
+                                                      color: _isDarkMode
+                                                          ? CupertinoColors
+                                                              .systemGrey
+                                                          : CupertinoColors
+                                                              .systemGrey,
                                                     ),
                                                     overflow:
                                                         TextOverflow.ellipsis,
@@ -274,23 +340,31 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                             isExpanded
                                                 ? CupertinoIcons.chevron_up
                                                 : CupertinoIcons.chevron_down,
-                                            color: CupertinoColors.systemGrey,
+                                            color: _isDarkMode
+                                                ? CupertinoColors.white
+                                                : CupertinoColors.systemGrey,
                                           ),
                                         ],
                                       ),
                                       if (isExpanded) ...[
                                         SizedBox(height: 10),
                                         Divider(
-                                            color: CupertinoColors.systemGrey3),
+                                          color: _isDarkMode
+                                              ? CupertinoColors.systemGrey6
+                                              : CupertinoColors.systemGrey3,
+                                        ),
                                         SizedBox(height: 5),
                                         Material(
                                           color: CupertinoColors.transparent,
                                           child: Text(
                                             "Phone: ${getDocumentData(user, 'phone') ?? 'N/A'}",
                                             style: TextStyle(
-                                                fontSize: 14,
-                                                color:
-                                                    CupertinoColors.activeBlue),
+                                              fontSize: 14,
+                                              color: _isDarkMode
+                                                  ? CupertinoColors.activeBlue
+                                                      .withOpacity(0.8)
+                                                  : CupertinoColors.activeBlue,
+                                            ),
                                           ),
                                         ),
                                         SizedBox(height: 5),
@@ -299,9 +373,12 @@ class _UsersCardScreenState extends State<UsersCardScreen> {
                                           child: Text(
                                             "Location: ${getDocumentData(user, 'location') ?? 'N/A'}",
                                             style: TextStyle(
-                                                fontSize: 14,
-                                                color:
-                                                    CupertinoColors.activeBlue),
+                                              fontSize: 14,
+                                              color: _isDarkMode
+                                                  ? CupertinoColors.activeBlue
+                                                      .withOpacity(0.8)
+                                                  : CupertinoColors.activeBlue,
+                                            ),
                                           ),
                                         ),
                                       ],

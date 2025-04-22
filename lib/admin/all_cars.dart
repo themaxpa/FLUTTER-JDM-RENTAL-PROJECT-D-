@@ -188,8 +188,8 @@ class _AllCarsScreenState extends State<AllCarsScreen> {
           if (!_showExpensiveCarsOnly) return true;
           final carData = carDoc.data() as Map<String, dynamic>;
           final price =
-              double.tryParse(carData['Price']?.toString() ?? '0') ?? 0;
-          return price > 1000; // Adjust this threshold as needed
+              double.tryParse(carData['1DayPrice']?.toString() ?? '0') ?? 0;
+          return price > 2000; // Adjust this threshold as needed
         }).toList();
 
         return _buildCarsList(cars);

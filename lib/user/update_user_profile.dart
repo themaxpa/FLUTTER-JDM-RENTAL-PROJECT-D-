@@ -20,6 +20,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   String? profileImageUrl;
   bool isLoadingImage = true;
+  bool _isDarkMode =
+      WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+
+  void _updateBrightness() {
+    setState(() {
+      _isDarkMode =
+          WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+    });
+  }
 
   @override
   void initState() {
@@ -30,6 +39,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       emailController.text = user.email ?? '';
       fetchUserData(user.uid);
     }
+    _updateBrightness();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
+      _updateBrightness();
+    };
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = null;
+    super.dispose();
   }
 
   Future<void> fetchUserData(String uid) async {
@@ -87,8 +106,15 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoActionSheet(
-          title: const Text("User Details",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          title: Text(
+            "User Details",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color:
+                  _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+            ),
+          ),
           message: Column(
             children: [
               _buildCupertinoListTile(
@@ -103,7 +129,14 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
           ),
           cancelButton: CupertinoActionSheetAction(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Close"),
+            child: Text(
+              "Close",
+              style: TextStyle(
+                color: _isDarkMode
+                    ? CupertinoColors.systemRed
+                    : CupertinoColors.destructiveRed,
+              ),
+            ),
           ),
         );
       },
@@ -112,18 +145,63 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   /// Helper method to create a Cupertino-style list item
   Widget _buildCupertinoListTile(IconData icon, String title, String value) {
-    return CupertinoListTile(
-      leading: Icon(icon, color: CupertinoColors.systemBlue),
-      title: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-      subtitle:
-          Text(value, style: TextStyle(color: CupertinoColors.systemGrey)),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
+      decoration: BoxDecoration(
+        color: _isDarkMode
+            ? CupertinoColors.darkBackgroundGray
+            : CupertinoColors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: _isDarkMode
+                ? CupertinoColors.darkBackgroundGray
+                : CupertinoColors.systemGrey5,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(icon,
+                  size: 22,
+                  color: _isDarkMode
+                      ? CupertinoColors.systemGrey
+                      : CupertinoColors.systemGrey),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: _isDarkMode
+                      ? CupertinoColors.white
+                      : CupertinoColors.black,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              color: _isDarkMode
+                  ? CupertinoColors.systemGrey
+                  : CupertinoColors.systemGrey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: _isDarkMode
+          ? CupertinoColors.black
+          : CupertinoColors.systemGroupedBackground,
       child: CustomScrollView(
         slivers: [
           CupertinoSliverNavigationBar(
@@ -198,32 +276,83 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
                     /// Profile Form
                     CupertinoListSection.insetGrouped(
+                      backgroundColor: _isDarkMode
+                          ? CupertinoColors.darkBackgroundGray
+                          : CupertinoColors.systemGroupedBackground,
                       children: [
                         CupertinoTextFormFieldRow(
                           controller: nameController,
                           placeholder: 'Full Name',
                           prefix: Icon(CupertinoIcons.person,
-                              color: CupertinoColors.systemGrey),
+                              color: _isDarkMode
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.systemGrey),
+                          style: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.white
+                                : CupertinoColors.black,
+                          ),
+                          placeholderStyle: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.systemGrey,
+                          ),
                         ),
                         CupertinoTextFormFieldRow(
                           controller: emailController,
                           placeholder: 'Email',
                           keyboardType: TextInputType.emailAddress,
                           prefix: Icon(CupertinoIcons.mail,
-                              color: CupertinoColors.systemGrey),
+                              color: _isDarkMode
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.systemGrey),
+                          style: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.white
+                                : CupertinoColors.black,
+                          ),
+                          placeholderStyle: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.systemGrey,
+                          ),
                         ),
                         CupertinoTextFormFieldRow(
                           controller: phoneController,
                           placeholder: 'Phone Number',
                           keyboardType: TextInputType.phone,
                           prefix: Icon(CupertinoIcons.phone,
-                              color: CupertinoColors.systemGrey),
+                              color: _isDarkMode
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.systemGrey),
+                          style: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.white
+                                : CupertinoColors.black,
+                          ),
+                          placeholderStyle: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.systemGrey,
+                          ),
                         ),
                         CupertinoTextFormFieldRow(
                           controller: locationController,
                           placeholder: 'Location',
                           prefix: Icon(CupertinoIcons.location,
-                              color: CupertinoColors.systemGrey),
+                              color: _isDarkMode
+                                  ? CupertinoColors.systemGrey
+                                  : CupertinoColors.systemGrey),
+                          style: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.white
+                                : CupertinoColors.black,
+                          ),
+                          placeholderStyle: TextStyle(
+                            color: _isDarkMode
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.systemGrey,
+                          ),
                         ),
                       ],
                     ),
@@ -235,14 +364,16 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       child: CupertinoButton(
                         onPressed: updateUserProfile,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        color: CupertinoColors.black,
-                        // Black button
+                        color: _isDarkMode
+                            ? CupertinoColors.systemBlue
+                            : CupertinoColors.black,
                         borderRadius: BorderRadius.circular(12),
-                        child: const Text(
+                        child: Text(
                           'Update Profile',
                           style: TextStyle(
-                              color: CupertinoColors.white,
-                              fontWeight: FontWeight.bold),
+                            color: CupertinoColors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -252,14 +383,18 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                       child: CupertinoButton(
                         onPressed: showUserDetailsDrawer,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        color: CupertinoColors.white,
-                        // White background
+                        color: _isDarkMode
+                            ? CupertinoColors.darkBackgroundGray
+                            : CupertinoColors.white,
                         borderRadius: BorderRadius.circular(12),
-                        child: const Text(
+                        child: Text(
                           'User Details',
                           style: TextStyle(
-                              color: CupertinoColors.black,
-                              fontWeight: FontWeight.bold),
+                            color: _isDarkMode
+                                ? CupertinoColors.white
+                                : CupertinoColors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

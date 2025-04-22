@@ -2,7 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CarRentalHistoryScreen extends StatelessWidget {
   const CarRentalHistoryScreen({super.key});
@@ -64,7 +67,15 @@ class CarRentalHistoryScreen extends StatelessWidget {
                           .format(cancelledAt.toDate())
                       : null;
 
-                  return BookingCard(
+                  // Extract location coordinates
+                  LatLng? carLocation;
+                  if (bookingData['carDetails']?['ELocation'] != null) {
+                    final geoPoint =
+                        bookingData['carDetails']?['ELocation'] as GeoPoint;
+                    carLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
+                  }
+
+                  return ExpandableBookingCard(
                     bookingId: booking.id,
                     vendorName: bookingData['vendorName'] ?? 'Unknown Vendor',
                     amount: bookingData['amount']?.toString() ?? 'N/A',
@@ -74,13 +85,16 @@ class CarRentalHistoryScreen extends StatelessWidget {
                         'Unknown Location',
                     frontImage: bookingData['carDetails']?['frontImage'],
                     bookingDateTime: formattedDate,
-                    status: bookingData['Status'] ?? 'Unknown',
+                    status: bookingData['status'] ??
+                        bookingData['Status'] ??
+                        'Unknown',
                     cancelledDate: cancelledDate,
                     pickupDate: bookingData['pickupDate'] ?? 'Unknown Date',
                     returnDate: bookingData['returnDate'] ?? 'Unknown Date',
                     pickupTime: bookingData['pickupTime'] ?? 'Unknown Time',
                     returnTime: bookingData['returnTime'] ?? 'Unknown Time',
                     mediaQuery: mediaQuery,
+                    carLocation: carLocation,
                   );
                 },
               ),
@@ -92,7 +106,7 @@ class CarRentalHistoryScreen extends StatelessWidget {
   }
 }
 
-class BookingCard extends StatelessWidget {
+class ExpandableBookingCard extends StatefulWidget {
   final String bookingId;
   final String vendorName;
   final String amount;
@@ -107,8 +121,9 @@ class BookingCard extends StatelessWidget {
   final String pickupTime;
   final String returnTime;
   final MediaQueryData mediaQuery;
+  final LatLng? carLocation;
 
-  const BookingCard({
+  const ExpandableBookingCard({
     super.key,
     required this.bookingId,
     required this.vendorName,
@@ -124,267 +139,382 @@ class BookingCard extends StatelessWidget {
     required this.pickupTime,
     required this.returnTime,
     required this.mediaQuery,
+    this.carLocation,
   });
 
   @override
+  State<ExpandableBookingCard> createState() => _ExpandableBookingCardState();
+}
+
+class _ExpandableBookingCardState extends State<ExpandableBookingCard> {
+  bool _isExpanded = false;
+
+  Future<void> _openGoogleMaps(LatLng location) async {
+    final url = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isCancelled = status.toLowerCase() == 'cancelled';
+    final isCancelled = widget.status.toLowerCase() == 'cancelled';
     final cardColor =
         isCancelled ? CupertinoColors.systemGrey5 : CupertinoColors.white;
     final textColor =
         isCancelled ? CupertinoColors.systemGrey : CupertinoColors.black;
 
-    // Calculate responsive sizes
-    final imageSize = mediaQuery.size.width * 0.25;
-    final cardPadding = mediaQuery.size.width * 0.04;
-    final fontSizeTitle = mediaQuery.size.width * 0.045;
-    final fontSizeSubtitle = mediaQuery.size.width * 0.035;
+    final imageSize = widget.mediaQuery.size.width * 0.25;
+    final cardPadding = widget.mediaQuery.size.width * 0.04;
+    final fontSizeTitle = widget.mediaQuery.size.width * 0.045;
+    final fontSizeSubtitle = widget.mediaQuery.size.width * 0.035;
+    final mapHeight = widget.mediaQuery.size.height * 0.2;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: mediaQuery.size.height * 0.015),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.1),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with image and basic info
-          Padding(
-            padding: EdgeInsets.all(cardPadding),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Car image
-                Container(
-                  width: imageSize,
-                  height: imageSize * 0.8,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    color: frontImage != null
-                        ? Colors.transparent
-                        : CupertinoColors.systemGrey5,
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isExpanded = !_isExpanded;
+        });
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: widget.mediaQuery.size.height * 0.015),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: CupertinoColors.systemGrey.withOpacity(0.1),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Collapsed view (always visible)
+            Padding(
+              padding: EdgeInsets.all(cardPadding),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Car image
+                  Container(
+                    width: imageSize,
+                    height: imageSize * 0.8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: widget.frontImage != null
+                          ? Colors.transparent
+                          : CupertinoColors.systemGrey5,
+                    ),
+                    child: widget.frontImage != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Opacity(
+                              opacity: isCancelled ? 0.6 : 1.0,
+                              child: Image.network(
+                                widget.frontImage!,
+                                width: imageSize,
+                                height: imageSize * 0.8,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(CupertinoIcons.photo,
+                                        size: imageSize * 0.4,
+                                        color: CupertinoColors.systemGrey),
+                              ),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(CupertinoIcons.photo,
+                                size: imageSize * 0.4,
+                                color: CupertinoColors.systemGrey),
+                          ),
                   ),
-                  child: frontImage != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Opacity(
-                            opacity: isCancelled ? 0.6 : 1.0,
-                            child: Image.network(
-                              frontImage!,
-                              width: imageSize,
-                              height: imageSize * 0.8,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(CupertinoIcons.photo,
-                                      size: imageSize * 0.4,
-                                      color: CupertinoColors.systemGrey),
+                  SizedBox(width: widget.mediaQuery.size.width * 0.03),
+                  // Car details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.modelName,
+                          style: TextStyle(
+                            fontSize: fontSizeTitle,
+                            fontWeight: FontWeight.w600,
+                            color: textColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: widget.mediaQuery.size.height * 0.005),
+                        Text(
+                          widget.vendorName,
+                          style: TextStyle(
+                            fontSize: fontSizeSubtitle,
+                            color: isCancelled
+                                ? CupertinoColors.systemGrey2
+                                : CupertinoColors.systemGrey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: widget.mediaQuery.size.height * 0.01),
+                        Text(
+                          "₹${widget.amount}/day",
+                          style: TextStyle(
+                            fontSize: fontSizeTitle,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Expand/collapse icon
+                  Icon(
+                    _isExpanded
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                    color: CupertinoColors.systemGrey,
+                  ),
+                ],
+              ),
+            ),
+
+            // Status chip (always visible)
+            Padding(
+              padding: EdgeInsets.only(
+                  left: cardPadding,
+                  right: cardPadding,
+                  bottom: _isExpanded ? 0 : cardPadding),
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: widget.mediaQuery.size.width * 0.02,
+                    vertical: widget.mediaQuery.size.height * 0.005),
+                decoration: BoxDecoration(
+                  color: isCancelled
+                      ? CupertinoColors.systemGrey4
+                      : CupertinoColors.systemGreen.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  widget.status.toUpperCase(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isCancelled
+                        ? CupertinoColors.systemGrey
+                        : CupertinoColors.systemGreen,
+                    fontSize: fontSizeSubtitle * 0.9,
+                  ),
+                ),
+              ),
+            ),
+
+            // Expanded content (only visible when expanded)
+            if (_isExpanded) ...[
+              const Divider(height: 1, thickness: 0.5),
+
+              // Cancelled date (if applicable)
+              if (widget.status.toLowerCase() == 'cancelled' &&
+                  widget.cancelledDate != null)
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: cardPadding,
+                      vertical: widget.mediaQuery.size.height * 0.01),
+                  child: Text(
+                    "Cancelled on: ${widget.cancelledDate}",
+                    style: TextStyle(
+                      color: CupertinoColors.systemRed,
+                      fontSize: fontSizeSubtitle,
+                    ),
+                  ),
+                ),
+
+              // Map section
+              if (widget.carLocation != null) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: cardPadding),
+                  child: GestureDetector(
+                    onTap: () => _openGoogleMaps(widget.carLocation!),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Stack(
+                        children: [
+                          SizedBox(
+                            height: mapHeight,
+                            child: FlutterMap(
+                              options: MapOptions(
+                                initialCenter: widget.carLocation!,
+                                initialZoom: 15.0,
+                                interactionOptions: const InteractionOptions(
+                                  flags: InteractiveFlag.all &
+                                      ~InteractiveFlag.rotate,
+                                ),
+                              ),
+                              children: [
+                                TileLayer(
+                                  urlTemplate:
+                                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                  userAgentPackageName: 'com.example.app',
+                                ),
+                                MarkerLayer(
+                                  markers: [
+                                    Marker(
+                                      width: 40,
+                                      height: 40,
+                                      point: widget.carLocation!,
+                                      child: const Icon(
+                                        Icons.location_pin,
+                                        color: Colors.red,
+                                        size: 40,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        )
-                      : Center(
-                          child: Icon(CupertinoIcons.photo,
-                              size: imageSize * 0.4,
-                              color: CupertinoColors.systemGrey),
-                        ),
+                          const Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Icon(
+                              Icons.open_in_new,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 8,
+                            right: 8,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                '${widget.carLocation!.latitude.toStringAsFixed(4)}, '
+                                '${widget.carLocation!.longitude.toStringAsFixed(4)}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                SizedBox(width: mediaQuery.size.width * 0.03),
-                // Car details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        modelName,
+                SizedBox(height: widget.mediaQuery.size.height * 0.015),
+              ],
+
+              // Dates and Times section
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: cardPadding),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Pickup Date and Time
+                    _buildDateTimeSection(
+                      "Pickup",
+                      widget.pickupDate,
+                      widget.pickupTime,
+                      isCancelled,
+                      fontSizeSubtitle,
+                    ),
+                    SizedBox(height: widget.mediaQuery.size.height * 0.01),
+                    // Return Date and Time
+                    _buildDateTimeSection(
+                      "Return",
+                      widget.returnDate,
+                      widget.returnTime,
+                      isCancelled,
+                      fontSizeSubtitle,
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: widget.mediaQuery.size.height * 0.012),
+
+              // Location section
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: cardPadding),
+                child: Row(
+                  children: [
+                    Icon(CupertinoIcons.location_solid,
+                        size: fontSizeSubtitle,
+                        color: isCancelled
+                            ? CupertinoColors.systemGrey2
+                            : CupertinoColors.systemGrey),
+                    SizedBox(width: widget.mediaQuery.size.width * 0.02),
+                    Expanded(
+                      child: Text(
+                        widget.location,
                         style: TextStyle(
-                          fontSize: fontSizeTitle,
-                          fontWeight: FontWeight.w600,
+                          fontSize: fontSizeSubtitle,
                           color: textColor,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: mediaQuery.size.height * 0.005),
-                      Text(
-                        vendorName,
-                        style: TextStyle(
-                          fontSize: fontSizeSubtitle,
-                          color: isCancelled
-                              ? CupertinoColors.systemGrey2
-                              : CupertinoColors.systemGrey,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: mediaQuery.size.height * 0.01),
-                      Text(
-                        "₹$amount/day",
-                        style: TextStyle(
-                          fontSize: fontSizeTitle,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: widget.mediaQuery.size.height * 0.015),
+
+              // Cancel button (if applicable)
+              if (widget.status.toLowerCase() == 'paid' && !isCancelled) ...[
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: cardPadding),
+                  child: Column(
+                    children: [
+                      const Divider(height: 1, thickness: 0.5),
+                      SizedBox(height: widget.mediaQuery.size.height * 0.015),
+                      SizedBox(
+                        width: double.infinity,
+                        child: CupertinoButton(
+                          color: CupertinoColors.destructiveRed,
+                          borderRadius: BorderRadius.circular(8),
+                          padding: EdgeInsets.symmetric(
+                              vertical: widget.mediaQuery.size.height * 0.015),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(CupertinoIcons.xmark_circle, size: 20),
+                              SizedBox(
+                                  width: widget.mediaQuery.size.width * 0.02),
+                              Text(
+                                "Cancel Booking",
+                                style: TextStyle(fontSize: fontSizeSubtitle),
+                              ),
+                            ],
+                          ),
+                          onPressed: () => _cancelBooking(context),
                         ),
                       ),
                     ],
                   ),
                 ),
+                SizedBox(height: widget.mediaQuery.size.height * 0.01),
               ],
-            ),
-          ),
-
-          // Divider
-          const Divider(height: 1, thickness: 0.5),
-
-          // Location and rating
-          Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: cardPadding,
-                vertical: mediaQuery.size.height * 0.012),
-            child: Row(
-              children: [
-                Icon(CupertinoIcons.location_solid,
-                    size: fontSizeSubtitle,
-                    color: isCancelled
-                        ? CupertinoColors.systemGrey2
-                        : CupertinoColors.systemGrey),
-                SizedBox(width: mediaQuery.size.width * 0.01),
-                Expanded(
-                  child: Text(
-                    location,
-                    style: TextStyle(
-                      fontSize: fontSizeSubtitle,
-                      color: textColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Dates and Times section
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Pickup Date and Time
-                _buildDateTimeSection(
-                  "Pickup",
-                  pickupDate,
-                  pickupTime,
-                  isCancelled,
-                  fontSizeSubtitle,
-                ),
-                SizedBox(height: mediaQuery.size.height * 0.01),
-                // Return Date and Time
-                _buildDateTimeSection(
-                  "Return",
-                  returnDate,
-                  returnTime,
-                  isCancelled,
-                  fontSizeSubtitle,
-                ),
-              ],
-            ),
-          ),
-
-          SizedBox(height: mediaQuery.size.height * 0.012),
-
-          // Status section
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: cardPadding),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: mediaQuery.size.width * 0.02,
-                      vertical: mediaQuery.size.height * 0.005),
-                  decoration: BoxDecoration(
-                    color: isCancelled
-                        ? CupertinoColors.systemGrey4
-                        : CupertinoColors.systemGreen.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    status.toUpperCase(),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: isCancelled
-                          ? CupertinoColors.systemGrey
-                          : CupertinoColors.systemGreen,
-                      fontSize: fontSizeSubtitle * 0.9,
-                    ),
-                  ),
-                ),
-                if (status.toLowerCase() == 'cancelled' &&
-                    cancelledDate != null)
-                  Padding(
-                    padding:
-                        EdgeInsets.only(top: mediaQuery.size.height * 0.005),
-                    child: Text(
-                      "Cancelled on: $cancelledDate",
-                      style: TextStyle(
-                        color: CupertinoColors.systemRed,
-                        fontSize: fontSizeSubtitle,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-
-          // Cancel button (if applicable)
-          if (status.toLowerCase() != 'cancelled') ...[
-            SizedBox(height: mediaQuery.size.height * 0.015),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: cardPadding),
-              child: SizedBox(
-                width: double.infinity,
-                child: CupertinoButton(
-                  color: CupertinoColors.systemRed,
-                  borderRadius: BorderRadius.circular(8),
-                  padding: EdgeInsets.symmetric(
-                      vertical: mediaQuery.size.height * 0.015),
-                  child: Text(
-                    "Cancel Booking",
-                    style: TextStyle(fontSize: fontSizeSubtitle),
-                  ),
-                  onPressed: () {
-                    _cancelBooking(context);
-                  },
-                ),
-              ),
-            ),
+            ],
           ],
-          SizedBox(height: mediaQuery.size.height * 0.01),
-        ],
+        ),
       ),
     );
   }
 
-  void _cancelBooking(BuildContext context) async {
-    // Check if the current status is "Paid"
-    if (status.toLowerCase() != 'paid') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Only paid bookings can be cancelled.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // Show confirmation dialog
+  Future<void> _cancelBooking(BuildContext context) async {
     bool confirmCancel = await showCupertinoDialog(
       context: context,
       builder: (BuildContext context) {
@@ -406,54 +536,45 @@ class BookingCard extends StatelessWidget {
       },
     );
 
-    // If confirmed, update Firestore and local state
     if (confirmCancel) {
       try {
-        Timestamp now = Timestamp.now();
-
-        // Get the current booking document to access carDetails
+        // First get the current booking data
         final bookingDoc = await FirebaseFirestore.instance
             .collection('Booking')
-            .doc(bookingId)
+            .doc(widget.bookingId)
             .get();
 
         if (!bookingDoc.exists) {
-          throw Exception("Booking not found");
+          throw Exception('Booking not found');
         }
 
         final bookingData = bookingDoc.data() as Map<String, dynamic>;
         final carDetails = bookingData['carDetails'] as Map<String, dynamic>;
 
-        // Update booking with new status and carDetails
+        // Update booking status to cancelled
         await FirebaseFirestore.instance
             .collection('Booking')
-            .doc(bookingId)
+            .doc(widget.bookingId)
             .update({
-          'Status': 'cancelled',
-          'cancelledAt': now,
-          'carDetails': {...carDetails, 'Status': 'available'}
+          'status': 'cancelled',
+          'cancelledAt': FieldValue.serverTimestamp(),
+          'carDetails': {
+            ...carDetails,
+            'Status': 'available' // Update car status to available
+          }
         });
 
-        // Update car status in vendors collection
-        if (carDetails["vendorId"] != null && carDetails["carId"] != null) {
-          final carRef = FirebaseFirestore.instance
-              .collection("vendors")
-              .doc(carDetails["vendorId"])
-              .collection("CarDetails")
-              .doc(carDetails["carId"]);
-
-          // Check if car document exists
-          final carDoc = await carRef.get();
-          if (carDoc.exists) {
-            await carRef.update({"Status": "available"});
-          } else {
-            debugPrint("Car document not found in vendors collection");
-          }
-        } else {
-          debugPrint("Missing vendorId or carId in carDetails");
+        // Update car status in vendor's collection
+        if (carDetails['vendorId'] != null && carDetails['carId'] != null) {
+          await FirebaseFirestore.instance
+              .collection('vendors')
+              .doc(carDetails['vendorId'])
+              .collection('CarDetails')
+              .doc(carDetails['carId'])
+              .update({'Status': 'available'});
         }
 
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Booking cancelled successfully'),
@@ -462,11 +583,10 @@ class BookingCard extends StatelessWidget {
           );
         }
       } catch (e) {
-        debugPrint("Error cancelling booking: $e");
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error cancelling booking: $e'),
+              content: Text('Failed to cancel booking: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -489,7 +609,7 @@ class BookingCard extends StatelessWidget {
                 : CupertinoColors.systemGrey,
           ),
         ),
-        SizedBox(height: mediaQuery.size.height * 0.005),
+        SizedBox(height: widget.mediaQuery.size.height * 0.005),
         Row(
           children: [
             Icon(
@@ -501,7 +621,7 @@ class BookingCard extends StatelessWidget {
                   ? CupertinoColors.systemGrey2
                   : CupertinoColors.systemGrey,
             ),
-            SizedBox(width: mediaQuery.size.width * 0.02),
+            SizedBox(width: widget.mediaQuery.size.width * 0.02),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -516,7 +636,7 @@ class BookingCard extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  time,
+                  _formatTime(time),
                   style: TextStyle(
                     fontSize: fontSize * 1.0,
                     color: isCancelled
@@ -538,6 +658,25 @@ class BookingCard extends StatelessWidget {
       return DateFormat('MMM dd, yyyy').format(parsedDate);
     } catch (e) {
       return date;
+    }
+  }
+
+  String _formatTime(String time) {
+    try {
+      // Try to parse time in 24-hour format first
+      final format24 = DateFormat('HH:mm');
+      DateTime parsedTime = format24.parse(time);
+      return DateFormat('h:mm a').format(parsedTime);
+    } catch (e) {
+      // If parsing fails, try 12-hour format with AM/PM
+      try {
+        final format12 = DateFormat('h:mm a');
+        DateTime parsedTime = format12.parse(time);
+        return DateFormat('h:mm a').format(parsedTime);
+      } catch (e) {
+        // If all parsing fails, return original time
+        return time;
+      }
     }
   }
 }

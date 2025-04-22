@@ -34,7 +34,8 @@ class _AdminHomeState extends State<AdminHome> {
   User? _user;
   DocumentSnapshot? _userData;
   bool _isLoading = true;
-  bool _isDarkMode = false;
+  bool _isDarkMode =
+      WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
   bool _isDrawerOpen = false;
   int _totalCars = 0;
   int _activeRentals = 0;
@@ -52,11 +53,16 @@ class _AdminHomeState extends State<AdminHome> {
     _loadCarData();
     _loadRecentActivities();
     _setupNotificationListener();
+    _updateBrightness();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
+      _updateBrightness();
+    };
   }
 
   @override
   void dispose() {
     _notificationSubscription?.cancel();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = null;
     super.dispose();
   }
 
@@ -280,9 +286,10 @@ class _AdminHomeState extends State<AdminHome> {
     );
   }
 
-  void _toggleDarkMode(bool value) {
+  void _updateBrightness() {
     setState(() {
-      _isDarkMode = value;
+      _isDarkMode =
+          WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
     });
   }
 
@@ -929,8 +936,8 @@ class _AdminHomeState extends State<AdminHome> {
           children: [
             Expanded(
               child: _buildActionButton(
-                'Add Car',
-                CupertinoIcons.plus_circle,
+                'Manage Cars',
+                CupertinoIcons.car_detailed,
                 _isDarkMode ? CupertinoColors.systemBlue : Colors.blue,
                 () {
                   Navigator.push(
@@ -1053,91 +1060,54 @@ class _AdminHomeState extends State<AdminHome> {
     return Drawer(
       backgroundColor:
           _isDarkMode ? CupertinoColors.black : CupertinoColors.white,
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          Expanded(
-            child: ListView(
-              padding: EdgeInsets.zero,
-              children: [
-                _buildDrawerHeader(),
-                _buildDrawerItem(Icons.dashboard, "Dashboard", () {
-                  Navigator.pop(context); // Close drawer
-                }),
-                _buildDrawerItem(Icons.settings, "Settings", () {
-                  Navigator.pop(context); // Close drawer
-                  Get.snackbar(
-                    "Coming Soon",
-                    "Settings feature is under development.",
-                    duration: AppConstants.snackbarDuration,
-                    backgroundColor: _isDarkMode
-                        ? CupertinoColors.darkBackgroundGray
-                        : Colors.white,
-                    colorText: _isDarkMode
-                        ? CupertinoColors.white
-                        : CupertinoColors.black,
-                  );
-                }),
-                _buildDrawerItem(Icons.person, "Users", () {
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (_) => UsersCardScreen()),
-                  );
-                }),
-                _buildDrawerItem(Icons.car_rental, "Cars", () {
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(builder: (_) => AllCarsScreen()),
-                  );
-                }),
-                _buildDrawerItem(Icons.person, "Profile", () {
-                  Navigator.pop(context); // Close drawer
-                  Navigator.push(
-                    context,
-                    CupertinoPageRoute(
-                        builder: (_) => const AdminProfileScreen()),
-                  );
-                }),
-                Divider(
-                    color: _isDarkMode
-                        ? CupertinoColors.white
-                        : CupertinoColors.black),
-                _buildDrawerItem(Icons.logout, "Logout", () {
-                  Navigator.pop(context); // Close drawer
-                  _showLogoutDialog(authController);
-                }),
-              ],
-            ),
-          ),
-          _buildDarkModeToggle(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDarkModeToggle() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Icon(
-            _isDarkMode ? CupertinoIcons.moon_fill : CupertinoIcons.moon,
-            color: _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Dark Mode',
-            style: TextStyle(
-              color:
+          _buildDrawerHeader(),
+          _buildDrawerItem(Icons.dashboard, "Dashboard", () {
+            Navigator.pop(context); // Close drawer
+          }),
+          _buildDrawerItem(Icons.settings, "Settings", () {
+            Navigator.pop(context); // Close drawer
+            Get.snackbar(
+              "Coming Soon",
+              "Settings feature is under development.",
+              duration: AppConstants.snackbarDuration,
+              backgroundColor: _isDarkMode
+                  ? CupertinoColors.darkBackgroundGray
+                  : Colors.white,
+              colorText:
                   _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
-            ),
-          ),
-          const Spacer(),
-          CupertinoSwitch(
-            value: _isDarkMode,
-            onChanged: _toggleDarkMode,
-          ),
+            );
+          }),
+          _buildDrawerItem(Icons.person, "Users", () {
+            Navigator.pop(context); // Close drawer
+            Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (_) => UsersCardScreen()),
+            );
+          }),
+          _buildDrawerItem(Icons.car_rental, "Cars", () {
+            Navigator.pop(context); // Close drawer
+            Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (_) => AllCarsScreen()),
+            );
+          }),
+          _buildDrawerItem(Icons.person, "Profile", () {
+            Navigator.pop(context); // Close drawer
+            Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (_) => const AdminProfileScreen()),
+            );
+          }),
+          Divider(
+              color:
+                  _isDarkMode ? CupertinoColors.white : CupertinoColors.black),
+          _buildDrawerItem(Icons.logout, "Logout", () {
+            Navigator.pop(context); // Close drawer
+            _showLogoutDialog(authController);
+          }),
         ],
       ),
     );

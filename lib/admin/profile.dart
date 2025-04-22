@@ -24,11 +24,17 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   User? _user;
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
+  bool _isDarkMode =
+      WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    _updateBrightness();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
+      _updateBrightness();
+    };
   }
 
   Future<void> updateAdminProfile(String name, String email) async {
@@ -71,17 +77,37 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       context: context,
       builder: (BuildContext context) {
         return CupertinoActionSheet(
-          title: const Text("Select Image Source"),
+          title: Text(
+            "Select Image Source",
+            style: TextStyle(
+              color:
+                  _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+            ),
+          ),
           actions: [
             CupertinoActionSheetAction(
-              child: const Text("Camera"),
+              child: Text(
+                "Camera",
+                style: TextStyle(
+                  color: _isDarkMode
+                      ? CupertinoColors.white
+                      : CupertinoColors.black,
+                ),
+              ),
               onPressed: () async {
                 Navigator.pop(context);
                 await _pickImage(ImageSource.camera);
               },
             ),
             CupertinoActionSheetAction(
-              child: const Text("Gallery"),
+              child: Text(
+                "Gallery",
+                style: TextStyle(
+                  color: _isDarkMode
+                      ? CupertinoColors.white
+                      : CupertinoColors.black,
+                ),
+              ),
               onPressed: () async {
                 Navigator.pop(context);
                 await _pickImage(ImageSource.gallery);
@@ -89,7 +115,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
-            child: const Text("Cancel"),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: _isDarkMode
+                    ? CupertinoColors.systemRed
+                    : CupertinoColors.destructiveRed,
+              ),
+            ),
             onPressed: () => Navigator.pop(context),
           ),
         );
@@ -124,20 +157,45 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text("Logout"),
-        content: const Text("Are you sure you want to log out?"),
+        title: Text(
+          "Logout",
+          style: TextStyle(
+            color: _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
+          "Are you sure you want to log out?",
+          style: TextStyle(
+            color: _isDarkMode ? CupertinoColors.white : CupertinoColors.black,
+          ),
+        ),
         actions: [
           CupertinoDialogAction(
-            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
-            onPressed: () => Get.back(),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: _isDarkMode
+                    ? CupertinoColors.systemBlue
+                    : CupertinoColors.activeBlue,
+              ),
+            ),
+            onPressed: () => Navigator.pop(context),
           ),
           CupertinoDialogAction(
-            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+            isDestructiveAction: true,
             onPressed: () async {
-              Get.back();
               await FirebaseAuth.instance.signOut();
               Get.offAll(() => const SplashScreen());
             },
+            child: Text(
+              "Logout",
+              style: TextStyle(
+                color: _isDarkMode
+                    ? CupertinoColors.systemRed
+                    : CupertinoColors.destructiveRed,
+              ),
+            ),
           ),
         ],
       ),
@@ -180,17 +238,26 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           height: 20,
         ),
         Material(
-          color: CupertinoColors.systemGroupedBackground,
+          color: Colors.transparent,
           child: Text(
             _userData?['name'] ?? 'N/A',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: _isDarkMode ? CupertinoColors.white : Colors.black,
+            ),
           ),
         ),
         Material(
-          color: CupertinoColors.systemGroupedBackground,
+          color: Colors.transparent,
           child: Text(
             _user?.email ?? 'N/A',
-            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+            style: TextStyle(
+              fontSize: 16,
+              color: _isDarkMode
+                  ? CupertinoColors.systemGrey
+                  : Colors.grey.shade600,
+            ),
           ),
         ),
       ],
@@ -206,33 +273,62 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
         margin: const EdgeInsets.symmetric(vertical: 5),
         decoration: BoxDecoration(
-          color: CupertinoColors.white,
+          color: _isDarkMode
+              ? CupertinoColors.darkBackgroundGray
+              : CupertinoColors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+          boxShadow: [
+            BoxShadow(
+                color: _isDarkMode ? Colors.black26 : Colors.black12,
+                blurRadius: 4)
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
-                Icon(icon, size: 22, color: textColor ?? Colors.black),
+                Icon(icon,
+                    size: 22,
+                    color: textColor ??
+                        (_isDarkMode ? CupertinoColors.white : Colors.black)),
                 const SizedBox(width: 15),
                 Text(title,
                     style: TextStyle(
-                        fontSize: 16, color: textColor ?? Colors.black)),
+                        fontSize: 16,
+                        color: textColor ??
+                            (_isDarkMode
+                                ? CupertinoColors.white
+                                : Colors.black))),
               ],
             ),
-            const Icon(CupertinoIcons.forward, color: Colors.grey),
+            Icon(CupertinoIcons.forward,
+                color: _isDarkMode ? CupertinoColors.systemGrey : Colors.grey),
           ],
         ),
       ),
     );
   }
 
+  void _updateBrightness() {
+    setState(() {
+      _isDarkMode =
+          WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = null;
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: _isDarkMode
+          ? CupertinoColors.black
+          : CupertinoColors.systemGroupedBackground,
       child: _isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 15))
           : SingleChildScrollView(

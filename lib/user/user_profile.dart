@@ -9,6 +9,9 @@ import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:flutter_app/screen/Privacy_policy.dart';
 import 'package:flutter_app/screen/screen_splash.dart';
 import 'package:flutter_app/user/update_user_profile.dart';
+import '../screen/information.dart';
+import '../screen/settings.dart';
+import '../screen/support.dart';
 import 'my_documents.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -229,14 +232,17 @@ class _SellerProfileState extends State<ProfileScreen> {
                   _buildProfileInfo(),
                   const SizedBox(height: 20),
                   _buildMenuItem("Edit Profile", CupertinoIcons.pencil,
-                      () => Get.to(() => const UpdateProfileScreen())),
+                      () => Get.to(() => UpdateProfileScreen())),
                   _buildMenuItem("Settings", CupertinoIcons.gear_alt,
+                      () => Get.to(() => AppSettingsPage())),
+                  _buildMenuItem("Privacy Policy", CupertinoIcons.gear_alt,
                       () => Get.to(() => PrivacyPolicyScreen())),
                   _buildMenuItem("My Documents", CupertinoIcons.doc_text,
                       () => Get.to(() => MyDocumentsScreen())),
-                  _buildMenuItem("Support", CupertinoIcons.person_2_alt, () {}),
-                  _buildMenuItem(
-                      "Information", CupertinoIcons.info_circle, () {}),
+                  _buildMenuItem("Support", CupertinoIcons.person_2_alt,
+                      () => Get.to(() => SupportPage())),
+                  _buildMenuItem("Information", CupertinoIcons.info_circle,
+                      () => Get.to(() => InformationPage())),
                   _buildMenuItem(
                       "Logout", CupertinoIcons.power, _showLogoutDialog,
                       textColor: Colors.red),

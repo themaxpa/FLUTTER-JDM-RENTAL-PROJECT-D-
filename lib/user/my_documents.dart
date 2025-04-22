@@ -13,6 +13,9 @@ class MyDocumentsScreen extends StatefulWidget {
 }
 
 class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
+  bool _isDarkMode =
+      WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+
   final List<Map<String, dynamic>> documents = [
     {
       "title": "DLFrontSide",
@@ -60,6 +63,23 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
   void initState() {
     super.initState();
     _loadUploadedDocuments();
+    _updateBrightness();
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = () {
+      _updateBrightness();
+    };
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.window.onPlatformBrightnessChanged = null;
+    super.dispose();
+  }
+
+  void _updateBrightness() {
+    setState(() {
+      _isDarkMode =
+          WidgetsBinding.instance.window.platformBrightness == Brightness.dark;
+    });
   }
 
   Future<void> _loadUploadedDocuments() async {
@@ -185,7 +205,9 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      backgroundColor: CupertinoColors.systemGroupedBackground,
+      backgroundColor: _isDarkMode
+          ? CupertinoColors.black
+          : CupertinoColors.systemGroupedBackground,
       navigationBar: CupertinoNavigationBar(
         middle: Text(
           'My Documents',
@@ -211,36 +233,43 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
   }
 
   Widget _buildIOSDocumentItem(int index) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    return GestureDetector(
+      onTap: () => _pickImage(index),
       child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: CupertinoColors.systemBackground,
-          borderRadius: BorderRadius.circular(10),
+          color: _isDarkMode
+              ? CupertinoColors.darkBackgroundGray
+              : CupertinoColors.white,
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: CupertinoColors.systemGrey.withOpacity(0.2),
-              blurRadius: 3,
+              color: _isDarkMode
+                  ? CupertinoColors.black.withOpacity(0.3)
+                  : CupertinoColors.systemGrey6,
+              blurRadius: 5,
               spreadRadius: 1,
-              offset: Offset(0, 1),
-            ),
+              offset: const Offset(0, 3),
+            )
           ],
         ),
-        child: CupertinoButton(
-          padding: EdgeInsets.all(16),
-          borderRadius: BorderRadius.circular(10),
-          onPressed: () => _pickImage(index),
-          child: Row(
-            children: [
-              Expanded(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       "Tap to upload/view",
                       style: TextStyle(
-                        color: CupertinoColors.secondaryLabel,
-                        fontSize: 13,
+                        fontSize: 14,
+                        color: _isDarkMode
+                            ? CupertinoColors.systemGrey
+                            : CupertinoColors.secondaryLabel,
                       ),
                     ),
                     SizedBox(height: 4),
@@ -249,7 +278,9 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: CupertinoColors.label,
+                        color: _isDarkMode
+                            ? CupertinoColors.white
+                            : CupertinoColors.label,
                       ),
                     ),
                     if (documents[index]["url"] != null) SizedBox(height: 8),
@@ -266,21 +297,25 @@ class _MyDocumentsScreenState extends State<MyDocumentsScreen> {
                   ],
                 ),
               ),
-              SizedBox(width: 8),
-              if (documents[index]["isUploading"])
-                CupertinoActivityIndicator(radius: 12)
-              else
-                Icon(
-                  documents[index]["isUploaded"]
-                      ? CupertinoIcons.checkmark_alt_circle_fill
-                      : CupertinoIcons.checkmark_alt_circle,
-                  color: documents[index]["isUploaded"]
-                      ? CupertinoColors.systemGreen
-                      : CupertinoColors.systemGrey,
-                  size: 24,
-                ),
-            ],
-          ),
+            ),
+            SizedBox(width: 16),
+            if (documents[index]["isUploading"])
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Icon(
+                documents[index]["isUploaded"]
+                    ? CupertinoIcons.checkmark_alt_circle_fill
+                    : CupertinoIcons.checkmark_alt_circle,
+                color: documents[index]["isUploaded"]
+                    ? CupertinoColors.systemGreen
+                    : CupertinoColors.systemGrey,
+                size: 24,
+              ),
+          ],
         ),
       ),
     );
@@ -293,6 +328,7 @@ class DocumentItem extends StatelessWidget {
   final bool isUploading;
   final bool isUploaded;
   final VoidCallback onUpload;
+  final bool isDarkMode;
 
   const DocumentItem({
     required this.title,
@@ -300,6 +336,7 @@ class DocumentItem extends StatelessWidget {
     required this.isUploading,
     required this.isUploaded,
     required this.onUpload,
+    required this.isDarkMode,
   });
 
   @override
@@ -307,17 +344,21 @@ class DocumentItem extends StatelessWidget {
     return GestureDetector(
       onTap: onUpload,
       child: Container(
-        margin: EdgeInsets.only(bottom: 12),
-        padding: EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDarkMode
+              ? CupertinoColors.darkBackgroundGray
+              : CupertinoColors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.shade300,
+              color: isDarkMode
+                  ? CupertinoColors.black.withOpacity(0.3)
+                  : CupertinoColors.systemGrey6,
               blurRadius: 5,
               spreadRadius: 1,
-              offset: Offset(0, 3),
+              offset: const Offset(0, 3),
             )
           ],
         ),
@@ -328,12 +369,24 @@ class DocumentItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Tap to upload/view",
-                      style: TextStyle(color: Colors.grey)),
+                  Text(
+                    "Tap to upload/view",
+                    style: TextStyle(
+                      color:
+                          isDarkMode ? CupertinoColors.systemGrey : Colors.grey,
+                    ),
+                  ),
                   SizedBox(height: 4),
-                  Text(title,
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode
+                          ? CupertinoColors.white
+                          : CupertinoColors.black,
+                    ),
+                  ),
                   if (url != null) SizedBox(height: 8),
                   if (url != null)
                     ClipRRect(

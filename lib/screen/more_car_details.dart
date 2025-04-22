@@ -33,6 +33,15 @@ class _CarDetailsScreenState extends State<CarDetailsScreen> {
     if (widget.car['sideImage'] != null) {
       _imageUrls.add(widget.car['sideImage']);
     }
+    if (widget.car['interiorImage1'] != null) {
+      _imageUrls.add(widget.car['interiorImage1']);
+    }
+    if (widget.car['interiorImage2'] != null) {
+      _imageUrls.add(widget.car['interiorImage2']);
+    }
+    if (widget.car['interiorImage3'] != null) {
+      _imageUrls.add(widget.car['interiorImage3']);
+    }
   }
 
   void _startImageTimer() {

@@ -18,6 +18,10 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
+  final TextEditingController companyController = TextEditingController();
+  final TextEditingController instagramController = TextEditingController();
+  final TextEditingController facebookController = TextEditingController();
+  final TextEditingController twitterController = TextEditingController();
 
   String? profileImageUrl;
   String? userRole;
@@ -45,7 +49,11 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
             nameController.text = data['name'] ?? '';
             phoneController.text = data['phone'] ?? '';
             locationController.text = data['location'] ?? '';
-            userRole = data['role'] ?? 'Vendor'; // Fetch role
+            companyController.text = data['company'] ?? '';
+            instagramController.text = data['instagram'] ?? '';
+            facebookController.text = data['facebook'] ?? '';
+            twitterController.text = data['twitter'] ?? '';
+            userRole = data['role'] ?? 'Vendor';
             profileImageUrl = data['profileImage'] ?? '';
             isLoadingImage = false;
           });
@@ -71,6 +79,10 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
         "email": emailController.text,
         "phone": phoneController.text,
         "location": locationController.text,
+        "company": companyController.text,
+        "instagram": instagramController.text,
+        "facebook": facebookController.text,
+        "twitter": twitterController.text,
       }, SetOptions(merge: true));
 
       Get.snackbar("Success", "Profile updated successfully!",
@@ -102,8 +114,19 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                   CupertinoIcons.phone, "Phone", phoneController.text),
               _buildCupertinoListTile(
                   CupertinoIcons.location, "Location", locationController.text),
+              _buildCupertinoListTile(CupertinoIcons.building_2_fill, "Company",
+                  companyController.text),
               _buildCupertinoListTile(
                   CupertinoIcons.person_crop_circle, "Role", userRole ?? 'N/A'),
+              if (instagramController.text.isNotEmpty)
+                _buildCupertinoListTile(CupertinoIcons.photo, "Instagram",
+                    instagramController.text),
+              if (facebookController.text.isNotEmpty)
+                _buildCupertinoListTile(
+                    CupertinoIcons.heart, "Facebook", facebookController.text),
+              if (twitterController.text.isNotEmpty)
+                _buildCupertinoListTile(CupertinoIcons.bubble_left, "Twitter",
+                    twitterController.text),
             ],
           ),
           cancelButton: CupertinoActionSheetAction(
@@ -115,7 +138,6 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
     );
   }
 
-  /// Helper method to create a Cupertino-style list item
   Widget _buildCupertinoListTile(IconData icon, String title, String value) {
     return CupertinoListTile(
       leading: Icon(icon, color: CupertinoColors.systemBlue),
@@ -228,6 +250,58 @@ class _SellerUpdateProfileScreenState extends State<SellerUpdateProfileScreen> {
                           placeholder: 'Location',
                           prefix: Icon(CupertinoIcons.location,
                               color: CupertinoColors.systemGrey),
+                        ),
+                        CupertinoTextFormFieldRow(
+                          controller: companyController,
+                          placeholder: 'Company Description',
+                          prefix: Icon(CupertinoIcons.building_2_fill,
+                              color: CupertinoColors.systemGrey),
+                        ),
+                      ],
+                    ),
+
+                    /// Social Media Section
+                    const SizedBox(height: 16),
+                    const Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Text(
+                            'Social Media',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: CupertinoColors.systemGrey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    CupertinoListSection.insetGrouped(
+                      children: [
+                        CupertinoTextFormFieldRow(
+                          controller: instagramController,
+                          placeholder: 'Instagram',
+                          prefix: Icon(CupertinoIcons.photo,
+                              color: CupertinoColors.systemGrey),
+                          keyboardType: TextInputType.url,
+                        ),
+                        CupertinoTextFormFieldRow(
+                          controller: facebookController,
+                          placeholder: 'Facebook',
+                          prefix: Icon(CupertinoIcons.heart,
+                              color: CupertinoColors.systemGrey),
+                          keyboardType: TextInputType.url,
+                        ),
+                        CupertinoTextFormFieldRow(
+                          controller: twitterController,
+                          placeholder: 'Twitter',
+                          prefix: Icon(CupertinoIcons.bubble_left,
+                              color: CupertinoColors.systemGrey),
+                          keyboardType: TextInputType.url,
                         ),
                       ],
                     ),
